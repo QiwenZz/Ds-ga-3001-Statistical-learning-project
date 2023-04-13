@@ -10,10 +10,14 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import pickle
+import json
+
 
 def get_data(fulldir):
     classes = os.listdir(fulldir)
-    classes.remove('.DS_Store')
+    if '.DS_Store' in classes:
+        classes.remove('.DS_Store')
     classes.sort()
     class_to_idx = dict(zip(classes, range(len(classes)))) 
     idx_to_class = {v:k for k,v in class_to_idx.items()}
@@ -21,14 +25,38 @@ def get_data(fulldir):
     convert_tensor = transforms.ToTensor()
     X = []
     y = []
-    print('retrieving data')
+    print('transforming data')
     for i, label in idx_to_class.items():
         path = fulldir+"/"+label
         for file in tqdm(os.listdir(path)):
             X.append(torch.unsqueeze(convert_tensor(resizer(Image.open(path+'/'+file).convert('RGB'))),0))
             y.append(i)
     
-    return torch.cat(X,dim=0),y, class_to_idx, idx_to_class
+    os.makedirs("data/processed")
+    
+    # save X
+    torch.save(torch.cat(X,dim=0), 'data/processed/X.pt')
+    
+    # save y
+    with open("data/processed/y.pickle", "wb") as fp:   
+        pickle.dump(y, fp)
+    
+    # save idx_to_class dictionary
+    with open("data/processed/idx_to_class.txt", "w") as fp:
+        json.dump(idx_to_class, fp)
+    
+
+def import_processed_data(args):
+    X = torch.load(args['X_path'])
+    
+    with open(args['y_path'], "rb") as fp:
+        y = pickle.load(fp)
+        
+    with open(args['idx_to_class_path'], "r") as fp:
+        idx_to_class = json.load(fp)        
+
+    return X, y, idx_to_class
+
 
 class PlantDataset(Dataset):
     def __init__(self, X, y, transform=None):
@@ -63,9 +91,11 @@ class RandomAddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
     
 def get_dataloaders(path, args):
+    if args['no_processed_data']:
+        # transform data
+        get_data('data/train')
     
-    # read in data
-    X,y, class_to_idx, idx_to_class = get_data(path)
+    X, y, idx_to_class = import_processed_data(args)
     
     # split data
     X_train, X_val, y_train, y_val = train_test_split(X,y,test_size=0.2,stratify=y)
@@ -92,6 +122,11 @@ def get_dataloaders(path, args):
         transforms.Normalize(mean=args['normalization_mean'], std = args['normalization_std'])
     ])
     
+    #transform to torch dataset object
+    train_dataset = PlantDataset(X_resampled,y_resampled,train_transform)
+    val_dataset = PlantDataset(X_val,y_val,val_transform)
+    
+    #construct dataloader
     train_loader = DataLoader(train_dataset, batch_size = args['bz'],shuffle=args['shuffle'], drop_last=True )
     val_loader = DataLoader(val_dataset, batch_size = args['bz'], drop_last=True )
     
