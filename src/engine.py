@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 def train_model(dataloaders, args):
     train_loader, val_loader = dataloaders
     
+    # below is only for testing purpose 
+    
     # test for training
     print('training')
     img, label = next(iter(train_loader))
