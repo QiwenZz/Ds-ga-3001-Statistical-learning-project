@@ -1,28 +1,49 @@
 import matplotlib.pyplot as plt
-def train_model(dataloaders, args):
-    train_loader, val_loader = dataloaders
-    
-    # below is only for testing purpose 
-    
-    # test for training
-    print('training')
-    img, label = next(iter(train_loader))
-    print('batch X shape:',img.shape)
-    print('batch y shape:',label.shape)
-    print('first sample y:'label[0])
-    print('showing fisrt sample X in image:')
-    plt.imshow(img[0].T)
-    plt.show()
+from src.train_utils import train, evaluate
+import torch
+import numpy as np
+import os
 
-    # test for training
-    print('testing')
-    img, label = next(iter(val_loader))
-    print('batch X shape:',img.shape)
-    print('batch y shape:',label.shape)
-    print('first sample y:'label[0])
-    print('showing fisrt sample X in image:')
-    plt.imshow(img[0].T)
-    plt.show()
+def train_model(network, dataloaders, args, device):
+    train_loader, val_loader = dataloaders
+    #epochs = args['epoch']
+    epochs = 10
+
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(network.parameters(), lr=0.001)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2)
+
+
+    # main train loop
+    best_acc = 0  # best val accuracy
+    start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+    metrics = []
+    for epoch in range(start_epoch, start_epoch+epochs):
+        train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device)
+        val_acc, val_loss = evaluate(epoch, network, val_loader, criterion, device)
+        metrics.append([train_acc, train_loss, val_acc, val_loss])
+        scheduler.step()
+
+        # Save checkpoint.
+        if val_acc > best_acc:
+            print('Saving..')
+            state = {
+                'net': network.state_dict(),
+                'acc': val_acc,
+                'epoch': epoch,
+            }
+            current_directory = os.getcwd()
+            print(current_directory)
+            final_directory = os.path.join(current_directory, r'models')
+            if not os.path.isdir(final_directory):
+                os.mkdir(final_directory)
+            torch.save(state, './models/'+' '.join(args)+'.pth')
+            best_acc = val_acc
+
+    state = torch.load('./models/'+' '.join(args)+'.pth')
+    state.update({'metrics': np.array(metrics)})
+    torch.save(state, './models/'+' '.join(args)+'.pth')
+    
     
     
     

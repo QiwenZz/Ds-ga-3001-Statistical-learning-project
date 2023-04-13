@@ -3,6 +3,7 @@ import argparse
 import os, sys, json
 from src.data import get_dataloaders
 from src.engine import train_model
+from src.model import load_model
 
 parser = argparse.ArgumentParser()
 
@@ -54,7 +55,8 @@ def main(args):
     else:
          print("using {}".format(device))
     dataloaders = get_dataloaders(args['path'], args)
-    train_model(dataloaders, args)
+    network = load_model(model_name = 'resnet50', freeze_counter=8).to(device)
+    train_model(network, dataloaders, args, device)
     
     
 if __name__ == '__main__':
