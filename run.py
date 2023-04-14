@@ -2,7 +2,7 @@ import torch
 import argparse
 import os, sys, json
 from src.data import get_dataloaders
-from src.engine import train_model
+from src.engine import train_model, train_model_se
 from src.model import load_model
 
 parser = argparse.ArgumentParser()
@@ -22,11 +22,11 @@ parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
 parser.add_argument('--smote', default=True, type=bool,
                     help='whether using smote for data augmentation')
-parser.add_argument('--bz', default=32, type=int,
+parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
-parser.add_argument('--normalization_mean', default=(0.3272, 0.2874, 0.2038), type=tuple,
+parser.add_argument('--normalization_mean', default=(0.485, 0.456, 0.406), type=tuple,
                     help='Mean value of z-scoring normalization for each channel in image')
-parser.add_argument('--normalization_std', default=(0.0965, 0.1009, 0.1173), type=tuple,
+parser.add_argument('--normalization_std', default=(0.229, 0.224, 0.225), type=tuple,
                     help='Mean value of z-scoring standard deviation for each channel in image')
 parser.add_argument('--brightness', default=(0.8,2), type=tuple,
                     help='Brightness range for data augmentation')
@@ -38,6 +38,21 @@ parser.add_argument('--shuffle', default=True, type=bool,
 # Hardware Related
 parser.add_argument('--device_id', default=0, type=int,
                     help='the id of the gpu to use')   
+
+# Training Arguments
+parser.add_argument('--optimizer', default='SGD', type=str,
+                    help='the optimizer to use')
+parser.add_argument('--lr', default=0.1, type=float,
+                    help='the optimizers learning rate')  
+parser.add_argument('--epochs', default=100, type=int,
+                    help='number of epochs')   
+
+# Ensembling Arguments
+parser.add_argument('--snapshot_ensemble', default=True, type=bool,
+                    help='whether snapshot ensembling to be performed')
+parser.add_argument('--estimators', default=10, type=int,
+                    help='number of estimators to be ensembled')  
+
 
 args = vars(parser.parse_args())
 
@@ -55,8 +70,9 @@ def main(args):
     else:
          print("using {}".format(device))
     dataloaders = get_dataloaders(args['path'], args)
-    network = load_model(model_name = 'resnet50', freeze_counter=8).to(device)
-    train_model(network, dataloaders, args, device)
+    network = load_model(model_name = 'resnet50', freeze_counter=7).to(device)
+    #train_model(network, dataloaders, args, device)
+    train_model_se(network, dataloaders, args, device)
     
     
 if __name__ == '__main__':
