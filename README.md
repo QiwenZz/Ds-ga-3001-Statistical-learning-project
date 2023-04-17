@@ -1,6 +1,7 @@
 # Ds-ga-3001-Statistical-learning-project
 
 To Do
+- Fix name defintion (name is the eval_accuracy and the state dict contains the arguments of the experiment)
 - Add .py file for submission csv generation
 - Re write the train_model_se for clarity
 - Add majority voting for the ensemble (so far done averaging)
