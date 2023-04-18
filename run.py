@@ -22,6 +22,8 @@ parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
 parser.add_argument('--smote', default=True, type=bool,
                     help='whether using smote for data augmentation')
+parser.add_argument('--size', default=(324,324), type=tuple,
+                    help='size to resize')
 parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
 parser.add_argument('--normalization_mean', default=(0.485, 0.456, 0.406), type=tuple,

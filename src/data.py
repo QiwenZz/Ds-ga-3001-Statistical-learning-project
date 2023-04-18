@@ -14,14 +14,14 @@ import pickle
 import json
 
 
-def get_data(fulldir):
+def get_data(fulldir, args):
     classes = os.listdir(fulldir)
     if '.DS_Store' in classes:
         classes.remove('.DS_Store')
     classes.sort()
     class_to_idx = dict(zip(classes, range(len(classes)))) 
     idx_to_class = {v:k for k,v in class_to_idx.items()}
-    resizer =  transforms.Resize((324,324))
+    resizer =  transforms.Resize(args['size'])
     convert_tensor = transforms.ToTensor()
     X = []
     y = []
@@ -73,7 +73,7 @@ class PlantDataset(Dataset):
     
 def smote_balance(X_train,y_train):
     X_resampled, y_resampled = SMOTE(n_jobs=-1).fit_resample(X_train.reshape(len(X_train),-1), y_train)
-    return torch.from_numpy(X_resampled.reshape((len(X_resampled),3,324,324))), y_resampled
+    return torch.from_numpy(X_resampled.reshape((len(X_resampled),3,args['size'][0],args['size'][1]))), y_resampled
 
 class RandomAddGaussianNoise(object):
     def __init__(self, mean=0., std=0.05,prob=0.5):
@@ -93,7 +93,7 @@ class RandomAddGaussianNoise(object):
 def get_dataloaders(path, args):
     if args['no_processed_data']:
         # transform data
-        get_data('data/train')
+        get_data('data/train', args)
     
     X, y, idx_to_class = import_processed_data(args)
     
