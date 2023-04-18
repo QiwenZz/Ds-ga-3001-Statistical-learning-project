@@ -4,6 +4,7 @@ import os, sys, json
 from src.data import get_dataloaders
 from src.engine import train_model, train_model_se
 from src.model import load_model
+from src.out import write_out_submission
 
 parser = argparse.ArgumentParser()
 
@@ -42,6 +43,8 @@ parser.add_argument('--device_id', default=0, type=int,
                     help='the id of the gpu to use')   
 
 # Training Arguments
+parser.add_argument('--model', default='resnet50', type=str,
+                    help='the model to use for training or make predictions')
 parser.add_argument('--optimizer', default='SGD', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.1, type=float,
@@ -55,6 +58,13 @@ parser.add_argument('--snapshot_ensemble', default=True, type=bool,
 parser.add_argument('--estimators', default=10, type=int,
                     help='number of estimators to be ensembled')  
 
+# Testing Model Related
+parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
+                    help='whether test a model and make prediction file')
+parser.add_argument('--test_path', default='data/test', type=str,
+                    help='path of the test data foler')
+parser.add_argument('--test_model', default='no_processed_data X_path y_path idx_to_class_path path smote bz normalization_mean normalization_std brightness noise_std shuffle device_id.pth', type=str,
+                    help='the model that will be used to produce predictions')
 
 args = vars(parser.parse_args())
 
@@ -71,10 +81,13 @@ def main(args):
         print("using cuda:{}".format(args['device_id']))
     else:
          print("using {}".format(device))
-    dataloaders = get_dataloaders(args['path'], args)
-    network = load_model(model_name = 'resnet50', freeze_counter=7).to(device)
-    #train_model(network, dataloaders, args, device)
-    train_model_se(network, dataloaders, args, device)
+    if args['test']:
+        write_out_submission(args, device)
+    else:
+        dataloaders = get_dataloaders(args['path'], args)
+        network = load_model(model_name = args['model'], freeze_counter=7).to(device)
+        #train_model(network, dataloaders, args, device)
+        train_model_se(network, dataloaders, args, device)
     
     
 if __name__ == '__main__':
