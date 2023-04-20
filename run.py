@@ -87,7 +87,7 @@ def main(args):
         write_out_submission(args, device)
     else:
         dataloaders = get_dataloaders(args['path'], args)
-        network = load_model(model_name = args['model'],args).to(device)
+        network = load_model(args).to(device)
         if args['snapshot_ensemble']:
             train_model_se(network, dataloaders, args, device)
         else:

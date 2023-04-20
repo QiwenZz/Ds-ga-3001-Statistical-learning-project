@@ -3,7 +3,8 @@ import torchvision
 import torch
 
 
-def load_model(model_name = 'resnet50',args):
+def load_model(args):
+    model_name = args['model']
     if args['reuse_model'] != '':
         state = torch.load('models/'+args['reuse_model'])
         model = load_model(model_name = state['args']['model'])
