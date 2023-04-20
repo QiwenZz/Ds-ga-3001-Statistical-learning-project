@@ -32,27 +32,27 @@ def get_data(fulldir, args):
             X.append(torch.unsqueeze(convert_tensor(resizer(Image.open(path+'/'+file).convert('RGB'))),0))
             y.append(i)
     
-    os.makedirs("data/processed")
+    os.makedirs(f"data/processed_{args['size']}")
     
     # save X
-    torch.save(torch.cat(X,dim=0), 'data/processed/X.pt')
+    torch.save(torch.cat(X,dim=0), f"data/processed_{args['size']}/X.pt")
     
     # save y
-    with open("data/processed/y.pickle", "wb") as fp:   
+    with open(f"data/processed_{args['size']}/y.pickle", "wb") as fp:   
         pickle.dump(y, fp)
     
     # save idx_to_class dictionary
-    with open("data/processed/idx_to_class.txt", "w") as fp:
+    with open(f"data/processed_{args['size']}/idx_to_class.txt", "w") as fp:
         json.dump(idx_to_class, fp)
     
 
 def import_processed_data(args):
-    X = torch.load(args['X_path'])
+    X = torch.load(f"data/processed_{args['size']}/X.pt")
     
-    with open(args['y_path'], "rb") as fp:
+    with open(f"data/processed_{args['size']}/y.pickle", "rb") as fp:
         y = pickle.load(fp)
         
-    with open(args['idx_to_class_path'], "r") as fp:
+    with open(f"data/processed_{args['size']}/idx_to_class.txt", "r") as fp:
         idx_to_class = json.load(fp)        
 
     return X, y, idx_to_class
@@ -91,7 +91,7 @@ class RandomAddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
     
 def get_dataloaders(path, args):
-    if args['no_processed_data']:
+    if not os.path.isdir(f"data/processed_{args['size']}"):
         # transform data
         get_data('data/train', args)
     
@@ -115,11 +115,11 @@ def get_dataloaders(path, args):
     transforms.RandomVerticalFlip(),
     RandomAddGaussianNoise(std=args['noise_std']),
     transforms.ColorJitter(brightness=args['brightness']),
-    transforms.Normalize(mean=args['normalization_mean'], std=args['normalization_std'])
+    transforms.Normalize(mean=args['norm_mean'], std=args['norm_std'])
     ])
 
     val_transform = transforms.Compose([
-        transforms.Normalize(mean=args['normalization_mean'], std = args['normalization_std'])
+        transforms.Normalize(mean=args['norm_mean'], std = args['norm_std'])
     ])
     
     #transform to torch dataset object

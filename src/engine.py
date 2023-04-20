@@ -6,7 +6,7 @@ import os
 from torch.optim.lr_scheduler import LambdaLR
 import math
 import copy
-from src.utils import progress_bar
+from src.utils import *
 
 def train_model(network, dataloaders, args, device):
     train_loader, val_loader = dataloaders
@@ -23,12 +23,17 @@ def train_model(network, dataloaders, args, device):
     # main train loop
     best_acc = 0  # best val accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+    early_stop = EarlyStopping(args['patience'])
     metrics = []
     for epoch in range(start_epoch, start_epoch+epochs):
         train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device)
         val_acc, val_loss = evaluate(epoch, network, val_loader, criterion, device)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
         scheduler.step()
+        
+        early_stop(val_loss)
+        if early_stop.early_stop:
+            break
 
         # Save checkpoint.
         if val_acc > best_acc:
@@ -75,6 +80,7 @@ def train_model_se(network, dataloaders, args, device):
     # main train loop
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
     best_acc = 0
+    early_stop = EarlyStopping(args['patience'])
     metrics = []
     snapshots = []
     counter = 0  # a counter on generating snapshots
@@ -128,6 +134,10 @@ def train_model_se(network, dataloaders, args, device):
         ######
         best_acc = max(best_acc, val_acc)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
+        
+        early_stop(val_loss)
+        if early_stop.early_stop:
+            break
 
 
 

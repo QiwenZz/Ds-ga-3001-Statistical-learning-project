@@ -5,12 +5,12 @@ from src.data import get_dataloaders
 from src.engine import train_model, train_model_se
 from src.model import load_model
 from src.out import write_out_submission
+from src.utils import tuple_float_type,tuple_int_type
 
 parser = argparse.ArgumentParser()
 
+
 # Data Loading Related
-parser.add_argument('--no_processed_data', default=False, type=lambda x: (str(x).lower() == 'true'),
-                    help='Whether the raw data has been processed into X,y and idx_to_class')
 parser.add_argument('--X_path', default='data/processed/X.pt', type=str,
                     help='path of X tensor')
 parser.add_argument('--y_path', default='data/processed/y.pickle', type=str,
@@ -23,15 +23,15 @@ parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
 parser.add_argument('--smote', default=True, type=bool,
                     help='whether using smote for data augmentation')
-parser.add_argument('--size', default=(324,324), type=tuple,
+parser.add_argument('--size', default="(324,324)", type=tuple_int_type,
                     help='size to resize')
 parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
-parser.add_argument('--normalization_mean', default=(0.485, 0.456, 0.406), type=tuple,
+parser.add_argument('--norm_mean', default="(0.485,0.456,0.406)", type=tuple_float_type,
                     help='Mean value of z-scoring normalization for each channel in image')
-parser.add_argument('--normalization_std', default=(0.229, 0.224, 0.225), type=tuple,
+parser.add_argument('--norm_std', default="(0.229,0.224,0.225)", type=tuple_float_type,
                     help='Mean value of z-scoring standard deviation for each channel in image')
-parser.add_argument('--brightness', default=(0.8,2), type=tuple,
+parser.add_argument('--brightness', default="(0.8,2)", type=tuple_float_type,
                     help='Brightness range for data augmentation')
 parser.add_argument('--noise_std', default=0.05, type=float,
                     help='Adding noise with guassian distribution for data augmentation')
@@ -49,8 +49,10 @@ parser.add_argument('--optimizer', default='SGD', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='the optimizers learning rate')  
-parser.add_argument('--epochs', default=10, type=int,
+parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs')   
+parser.add_argument('--patience', default=5, type=int,
+                    help='patience for early stop')   
 
 # Ensembling Arguments
 parser.add_argument('--snapshot_ensemble', default=False, type=bool,
@@ -59,7 +61,7 @@ parser.add_argument('--estimators', default=10, type=int,
                     help='number of estimators to be ensembled')  
 
 # Testing Model Related
-parser.add_argument('--test', default=True, type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether test a model and make prediction file')
 parser.add_argument('--test_path', default='data/test', type=str,
                     help='path of the test data foler')
@@ -69,7 +71,8 @@ parser.add_argument('--test_model', default='0.9564732142857143.pth', type=str,
 args = vars(parser.parse_args())
 
 def main(args):
-
+    print(args['size'])
+    print(type(args['size']))
     print(f'CUDA availability: {torch.cuda.is_available()}')
     if torch.cuda.is_available():
         for i in range(torch.cuda.device_count()):
