@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from src.train_utils import train, evaluate
+from src.train_utils import train, evaluate, evaluate_se
 import torch
 import numpy as np
 import os
@@ -37,18 +37,12 @@ def train_model(network, dataloaders, args, device):
                 'net': network.state_dict(),
                 'acc': val_acc,
                 'epoch': epoch,
+                'args' : args
             }
-            current_directory = os.getcwd()
-            print(current_directory)
-            final_directory = os.path.join(current_directory, r'models')
-            if not os.path.isdir(final_directory):
-                os.mkdir(final_directory)
-            torch.save(state, './models/'+' '.join(args)+'.pth')
             best_acc = val_acc
 
-    state = torch.load('./models/'+' '.join(args)+'.pth')
     state.update({'metrics': np.array(metrics)})
-    torch.save(state, './models/'+' '.join(args)+'.pth')
+    torch.save(state,'./models/'+str(best_acc)+'.pth')
     
     
     
@@ -80,6 +74,7 @@ def train_model_se(network, dataloaders, args, device):
 
     # main train loop
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+    best_acc = 0
     metrics = []
     snapshots = []
     counter = 0  # a counter on generating snapshots
@@ -128,37 +123,13 @@ def train_model_se(network, dataloaders, args, device):
 
         # Ensemble evaluation, combine the predictions on the evaluation data
         # of the current model, and the current set of snapshots
-        model_list = [copy.deepcopy(network) for _ in range(len(snapshots))]
 
-        for model, weight in zip(model_list, snapshots):
-            model.load_state_dict(weight)
-            model.eval()
-        network.eval()
-        model_list.append(network)
-
-        eval_loss = 0
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for batch_idx, (inputs, targets) in enumerate(val_loader):
-                inputs, targets = inputs.to(device), targets.to(device)
-                outputs_list = [net(inputs) for net in model_list]
-                outputs = torch.mean(torch.stack(outputs_list), 0).squeeze()
-                loss = criterion(outputs, targets)
-
-                eval_loss += loss.item()
-                _, predicted = outputs.max(1)
-                total += targets.size(0)
-                correct += predicted.eq(targets).sum().item()
-
-                progress_bar(batch_idx, len(val_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                            % (eval_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
-        val_acc, val_loss =  correct/total, eval_loss/(batch_idx+1)
+        val_acc, val_loss =  evaluate_se(epoch, network, snapshots+[copy.deepcopy(network).state_dict()], val_loader, criterion, device, verbose=True)
         ######
+        best_acc = max(best_acc, val_acc)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
 
 
 
-    state = {'snapshots': snapshots, 'metrics': np.array(metrics)}
-    torch.save(state, './models/'+' '.join(args)+'.pth')
+    state = {'snapshots': snapshots, 'metrics': np.array(metrics), 'args':args}
+    torch.save(state,  './models/'+str(best_acc)+'.pth')

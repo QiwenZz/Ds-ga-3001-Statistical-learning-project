@@ -49,21 +49,21 @@ parser.add_argument('--optimizer', default='SGD', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='the optimizers learning rate')  
-parser.add_argument('--epochs', default=100, type=int,
+parser.add_argument('--epochs', default=10, type=int,
                     help='number of epochs')   
 
 # Ensembling Arguments
-parser.add_argument('--snapshot_ensemble', default=True, type=bool,
+parser.add_argument('--snapshot_ensemble', default=False, type=bool,
                     help='whether snapshot ensembling to be performed')
 parser.add_argument('--estimators', default=10, type=int,
                     help='number of estimators to be ensembled')  
 
 # Testing Model Related
-parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--test', default=True, type=lambda x: (str(x).lower() == 'true'),
                     help='whether test a model and make prediction file')
 parser.add_argument('--test_path', default='data/test', type=str,
                     help='path of the test data foler')
-parser.add_argument('--test_model', default='no_processed_data X_path y_path idx_to_class_path path smote bz normalization_mean normalization_std brightness noise_std shuffle device_id.pth', type=str,
+parser.add_argument('--test_model', default='0.9564732142857143.pth', type=str,
                     help='the model that will be used to produce predictions')
 
 args = vars(parser.parse_args())
@@ -86,8 +86,11 @@ def main(args):
     else:
         dataloaders = get_dataloaders(args['path'], args)
         network = load_model(model_name = args['model'], freeze_counter=7).to(device)
-        #train_model(network, dataloaders, args, device)
-        train_model_se(network, dataloaders, args, device)
+        if args['snapshot_ensemble']:
+            train_model_se(network, dataloaders, args, device)
+        else:
+            train_model(network, dataloaders, args, device)
+        
     
     
 if __name__ == '__main__':
