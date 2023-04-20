@@ -3,20 +3,27 @@ import torchvision
 import torch
 
 
+
 def load_model(args):
     model_name = args['model']
     if args['reuse_model'] != '':
-        state = torch.load('models/'+args['reuse_model'])
-        model = load_model(model_name = state['args']['model'])
-        model.load_state_dict(state['net'])
+        state = torch.load('models/'+args['reuse_model']) 
+#         model_name = state['args']['model']
+#         print(model_name)
+        
     if model_name == 'resnet50':
         model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
 
-    if model_name == 'resnet101':
+    elif model_name == 'resnet101':
         model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
     
     elif model_name == 'inception':
         model = models.inception_v3(pretrained=True)
+     
+    # loads in the weight for an existent model
+    if args['reuse_model'] != '':
+        model.load_state_dict(state['net'])
+        print('loaded')
 
     for c, child in enumerate(model.children()):
         if c<args['freeze_num']:

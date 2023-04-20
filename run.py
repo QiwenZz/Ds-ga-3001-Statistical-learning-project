@@ -37,7 +37,7 @@ parser.add_argument('--device_id', default=0, type=int,
 parser.add_argument('--model', default='resnet50', type=str,
                     help='the model to use for training or make predictions')
 parser.add_argument('--reuse_model', default='', type=str,
-                    help='the model to reuse for finetuning on new data')
+                    help='the name of the model to reuse for finetuning on new data')
 parser.add_argument('--optimizer', default='SGD', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.1, type=float,

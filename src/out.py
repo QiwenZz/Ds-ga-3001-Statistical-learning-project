@@ -70,7 +70,7 @@ def write_out_submission(args,device):
 
     # load in state and model
     state = torch.load('models/'+args['test_model'])
-    model = load_model(model_name = args['model'])
+    model = load_model(args)
     if state['args']['snapshot_ensemble']:
         snapshots = state['snapshots']
         preds = test_se(test_loader, model, snapshots, device)
@@ -87,8 +87,8 @@ def write_out_submission(args,device):
     file['species'] = predictions
     file['species'] = file['species'].astype('str')
     
-    with open(args['idx_to_class_path'], "r") as fp:
-        idx_to_class = json.load(fp)     
+    with open(f"data/processed_{args['size']}/idx_to_class.txt", "r") as fp:
+        idx_to_class = json.load(fp)         
         
     file = file.replace({"species": idx_to_class})
     
