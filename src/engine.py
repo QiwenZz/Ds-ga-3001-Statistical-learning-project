@@ -14,9 +14,9 @@ def train_model(network, dataloaders, args, device):
 
     criterion = torch.nn.CrossEntropyLoss()
     if args['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'])
+        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weigth_decay'])
     if args['optimizer'] == 'SGD':
-        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'])
+        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weigth_decay'], momentum=args['momentum'])
     
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2) #add more schedulers
 
@@ -47,6 +47,7 @@ def train_model(network, dataloaders, args, device):
             best_acc = val_acc
 
     state.update({'metrics': np.array(metrics)})
+    
     torch.save(state,'./models/'+str(best_acc)+'.pth')
     
     
@@ -72,9 +73,10 @@ def train_model_se(network, dataloaders, args, device):
 
     criterion = torch.nn.CrossEntropyLoss()
     if args['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'])
+        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weigth_decay'])
     if args['optimizer'] == 'SGD':
-        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'])
+        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weigth_decay'], momentum=args['momentum'])
+    
     scheduler = _set_scheduler(optimizer, n_estimators, epochs)
 
     # main train loop

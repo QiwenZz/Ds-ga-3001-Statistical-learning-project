@@ -3,7 +3,11 @@ import torchvision
 import torch
 
 
-def load_model(model_name = 'resnet50', freeze_counter=7):
+def load_model(model_name = 'resnet50',args):
+    if args['reuse_model'] != '':
+        state = torch.load('models/'+args['reuse_model'])
+        model = load_model(model_name = state['args']['model'])
+        model.load_state_dict(state['net'])
     if model_name == 'resnet50':
         model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
 
@@ -14,7 +18,7 @@ def load_model(model_name = 'resnet50', freeze_counter=7):
         model = models.inception_v3(pretrained=True)
 
     for c, child in enumerate(model.children()):
-        if c<freeze_counter:
+        if c<args['freeze_num']:
             for param in child.parameters():
                 param.requires_grad = False
 

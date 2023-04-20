@@ -9,15 +9,6 @@ from src.utils import tuple_float_type,tuple_int_type
 
 parser = argparse.ArgumentParser()
 
-
-# Data Loading Related
-parser.add_argument('--X_path', default='data/processed/X.pt', type=str,
-                    help='path of X tensor')
-parser.add_argument('--y_path', default='data/processed/y.pickle', type=str,
-                    help='path of y list')
-parser.add_argument('--idx_to_class_path', default='data/processed/idx_to_class.txt', type=str,
-                    help='path of the idx_to_class dictionary')
-
 # Data Tuning Related
 parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
@@ -45,10 +36,18 @@ parser.add_argument('--device_id', default=0, type=int,
 # Training Arguments
 parser.add_argument('--model', default='resnet50', type=str,
                     help='the model to use for training or make predictions')
+parser.add_argument('--reuse_path', default='', type=str,
+                    help='the model to reuse for finetuning on new data')
 parser.add_argument('--optimizer', default='SGD', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='the optimizers learning rate')  
+parser.add_argument('--momentum', default=0, type=float,
+                    help='momentum factor for sgd')  
+parser.add_argument('--weight_decay', default=0, type=float,
+                    help=' weight decay (L2 penalty) for both sgd and adam')  
+parser.add_argument('--freeze_num', default=7, type=int,
+                    help='number of layers to freeze during fine tuning in CNN-like architcture')  
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs')   
 parser.add_argument('--patience', default=5, type=int,
@@ -88,7 +87,7 @@ def main(args):
         write_out_submission(args, device)
     else:
         dataloaders = get_dataloaders(args['path'], args)
-        network = load_model(model_name = args['model'], freeze_counter=7).to(device)
+        network = load_model(model_name = args['model'],args).to(device)
         if args['snapshot_ensemble']:
             train_model_se(network, dataloaders, args, device)
         else:
