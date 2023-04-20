@@ -28,7 +28,7 @@ def train(epoch, network, trainloader, criterion, optimizer, device):
 
         
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
     
     return correct/total, train_loss/(batch_idx+1)
@@ -50,7 +50,7 @@ def evaluate(epoch, network, valloader, criterion, device, verbose=True):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             if verbose:
-                progress_bar(batch_idx, len(valloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                progress_bar(batch_idx, len(valloader), 'Val Loss: %.3f | Val Acc: %.3f%% (%d/%d)'
                             % (eval_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
     return correct/total, eval_loss/(batch_idx+1)

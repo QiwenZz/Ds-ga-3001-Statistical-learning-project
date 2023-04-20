@@ -4,12 +4,10 @@ import torch
 
 
 
-def load_model(args):
-    model_name = args['model']
+def load_model(model_name, args):
     if args['reuse_model'] != '':
         state = torch.load('models/'+args['reuse_model']) 
-#         model_name = state['args']['model']
-#         print(model_name)
+        model_name = state['args']['model']
         
     if model_name == 'resnet50':
         model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
@@ -20,10 +18,6 @@ def load_model(args):
     elif model_name == 'inception':
         model = models.inception_v3(pretrained=True)
      
-    # loads in the weight for an existent model
-    if args['reuse_model'] != '':
-        model.load_state_dict(state['net'])
-        print('loaded')
 
     for c, child in enumerate(model.children()):
         if c<args['freeze_num']:
@@ -38,6 +32,11 @@ def load_model(args):
         torch.nn.Dropout(0.5),
         torch.nn.Linear(256, 12)
     )
+    
+    # loads in the weight for an existent model
+    if args['reuse_model'] != '':
+        model.load_state_dict(state['net'])
+        print('loaded')
     '''
     model.fc = torch.nn.Sequential(
         torch.nn.Linear(num_ftrs, 1200),
