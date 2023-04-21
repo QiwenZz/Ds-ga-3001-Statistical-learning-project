@@ -132,7 +132,7 @@ def train_model_se(network, dataloaders, args, device):
         # Ensemble evaluation, combine the predictions on the evaluation data
         # of the current model, and the current set of snapshots
 
-        val_acc, val_loss =  evaluate_se(epoch, network, snapshots+[copy.deepcopy(network).state_dict()], val_loader, criterion, device, verbose=True)
+        val_acc, val_loss =  evaluate_se(epoch, network, snapshots+[copy.deepcopy(network).state_dict()], val_loader, criterion, device, method=args['voting'], verbose=True)
         ######
         best_acc = max(best_acc, val_acc)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
@@ -140,8 +140,6 @@ def train_model_se(network, dataloaders, args, device):
         early_stop(val_loss)
         if early_stop.early_stop:
             break
-
-
 
     state = {'snapshots': snapshots, 'metrics': np.array(metrics), 'args':args}
     torch.save(state,  './models/'+str(best_acc)+'.pth')

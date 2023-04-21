@@ -21,6 +21,7 @@ class PlantTestDataset(Dataset):
 
 def test(test_loader, model, device):
     model.to(device)
+    model.eval()
     predictions = []
     with torch.no_grad():
         for image in test_loader:
@@ -31,7 +32,7 @@ def test(test_loader, model, device):
             predictions.append(y_pred_labels)
     return predictions
 
-def test_se(test_loader, network, snapshots, device):
+def test_se(test_loader, network, snapshots, method, device):
     model_list = [copy.deepcopy(network) for _ in range(len(snapshots))]
 
     for model, weight in zip(model_list, snapshots):
@@ -44,8 +45,12 @@ def test_se(test_loader, network, snapshots, device):
         for image in test_loader:
             image = image.to(device)
             pred_list = [net(image) for net in model_list]
-            y_pred = torch.mean(torch.stack(pred_list), 0).squeeze()
-            y_pred_labels = y_pred.argmax(dim=1)
+            if method == 'average':
+                _, y_pred_labels = (torch.mean(torch.stack(pred_list), 0).squeeze()).max(1)
+            elif method == 'majority':
+                y_pred_labels = [preds.max(1)[1] for preds in pred_list]
+                y_pred_labels = torch.stack(y_pred_labels).mode(0).values
+            
             y_pred_labels = y_pred_labels.cpu().numpy()
             predictions.append(y_pred_labels)
     return predictions
@@ -73,7 +78,7 @@ def write_out_submission(args,device):
     model = load_model(args)
     if state['args']['snapshot_ensemble']:
         snapshots = state['snapshots']
-        preds = test_se(test_loader, model, snapshots, device)
+        preds = test_se(test_loader, model, snapshots, args['voting'], device)
     else:
         model.load_state_dict(state['net'])
         preds = test(test_loader, model, device)

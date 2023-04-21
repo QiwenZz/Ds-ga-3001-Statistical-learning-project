@@ -14,7 +14,7 @@ parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
 parser.add_argument('--smote', default=True, type=bool,
                     help='whether using smote for data augmentation')
-parser.add_argument('--size', default="(324,324)", type=tuple_int_type,
+parser.add_argument('--size', default="(399,399)", type=tuple_int_type,
                     help='size to resize')
 parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
@@ -38,19 +38,19 @@ parser.add_argument('--model', default='resnet50', type=str,
                     help='the model to use for training or make predictions')
 parser.add_argument('--reuse_model', default='', type=str,
                     help='the name of the model to reuse for finetuning on new data')
-parser.add_argument('--optimizer', default='SGD', type=str,
+parser.add_argument('--optimizer', default='Adam', type=str,
                     help='the optimizer to use')
-parser.add_argument('--lr', default=0.1, type=float,
+parser.add_argument('--lr', default=0.001, type=float,
                     help='the optimizers learning rate')  
-parser.add_argument('--momentum', default=0, type=float,
+parser.add_argument('--momentum', default=0.9, type=float,
                     help='momentum factor for sgd')  
-parser.add_argument('--weight_decay', default=0, type=float,
+parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help=' weight decay (L2 penalty) for both sgd and adam')  
 parser.add_argument('--freeze_num', default=7, type=int,
                     help='number of layers to freeze during fine tuning in CNN-like architcture')  
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs')   
-parser.add_argument('--patience', default=5, type=int,
+parser.add_argument('--patience', default=100, type=int,
                     help='patience for early stop')   
 
 # Ensembling Arguments
@@ -58,13 +58,15 @@ parser.add_argument('--snapshot_ensemble', default=False, type=bool,
                     help='whether snapshot ensembling to be performed')
 parser.add_argument('--estimators', default=10, type=int,
                     help='number of estimators to be ensembled')  
+parser.add_argument('--voting', default='majority', type=str,
+                    help='how the ensembling between different estimators is performed')  
 
 # Testing Model Related
 parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether test a model and make prediction file')
 parser.add_argument('--test_path', default='data/test', type=str,
                     help='path of the test data foler')
-parser.add_argument('--test_model', default='0.9564732142857143.pth', type=str,
+parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
                     help='the model that will be used to produce predictions')
 
 args = vars(parser.parse_args())

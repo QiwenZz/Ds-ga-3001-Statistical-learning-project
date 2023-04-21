@@ -56,7 +56,7 @@ def evaluate(epoch, network, valloader, criterion, device, verbose=True):
     return correct/total, eval_loss/(batch_idx+1)
 
 
-def evaluate_se(epoch, network, snapshots, valloader, criterion, device, verbose=True):
+def evaluate_se(epoch, network, snapshots, valloader, criterion, device, method='average', verbose=True):
     model_list = [copy.deepcopy(network) for _ in range(len(snapshots))]
 
     for model, weight in zip(model_list, snapshots):
@@ -74,7 +74,12 @@ def evaluate_se(epoch, network, snapshots, valloader, criterion, device, verbose
             loss = criterion(outputs, targets)
 
             eval_loss += loss.item()
-            _, predicted = outputs.max(1)
+            if method == 'average':
+                _, predicted = outputs.max(1)
+            elif method == 'majority':
+                predicted = [preds.max(1)[1] for preds in outputs_list]
+                predicted = torch.stack(predicted).mode(0).values
+
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             if verbose:
