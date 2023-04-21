@@ -28,6 +28,8 @@ parser.add_argument('--noise_std', default=0.05, type=float,
                     help='Adding noise with guassian distribution for data augmentation')
 parser.add_argument('--shuffle', default=True, type=bool,
                     help='whether to shuffle training data during optimization')
+parser.add_argument('--segmentation', default=True, type=str,
+                    help='use segmentation for data preprocessing')
 
 # Hardware Related
 parser.add_argument('--device_id', default=0, type=int,

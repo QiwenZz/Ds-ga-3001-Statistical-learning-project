@@ -12,7 +12,41 @@ import matplotlib.pyplot as plt
 import random
 import pickle
 import json
+import cv2
 
+def create_mask_for_plant(image):
+    image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    sensitivity = 35
+    lower_hsv = np.array([60 - sensitivity, 100, 50])
+    upper_hsv = np.array([60 + sensitivity, 255, 255])
+
+    mask = cv2.inRange(image_hsv, lower_hsv, upper_hsv)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11,11))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    
+    return mask
+
+def segment_plant(image):
+    mask = create_mask_for_plant(image)
+    output = cv2.bitwise_and(image, image, mask = mask)
+    return output
+
+def sharpen_image(image):
+    image_blurred = cv2.GaussianBlur(image, (0, 0), 3)
+    image_sharp = cv2.addWeighted(image, 1.5, image_blurred, -0.5, 0)
+    return image_sharp
+
+def image_segmentation(fulldir): 
+    for class_folder_name in os.listdir(fulldir):
+        class_folder_path = os.path.join(fulldir, class_folder_name)
+        os.makedirs(f"segmentation/{class_folder_name}")
+        for image_name in tqdm(os.listdir(class_folder_path)):
+            image_org = cv2.imread(os.path.join(class_folder_path, image_name), cv2.IMREAD_COLOR)
+            image_mask = create_mask_for_plant(image_org)
+            image_segmented = segment_plant(image_org)
+            image_sharpen = sharpen_image(image_segmented)
+            cv2.imwrite(os.path.join('segmentation', class_folder_name, image_name), image_sharpen)
 
 def get_data(fulldir, args):
     classes = os.listdir(fulldir)
@@ -91,9 +125,15 @@ class RandomAddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
     
 def get_dataloaders(path, args):
-    if not os.path.isdir(f"data/processed_{args['size']}"):
-        # transform data
-        get_data('data/train', args)
+
+    if args['segmentation']: 
+        if not os.path.isdir(f"segmentation"):
+            image_segmentation(path)
+            get_data('segmentation', args)
+    else: 
+        if not os.path.isdir(f"data/processed_{args['size']}"):
+            # transform data
+            get_data(path, args)
     
     X, y, idx_to_class = import_processed_data(args)
     
