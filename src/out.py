@@ -56,13 +56,14 @@ def test_se(test_loader, network, snapshots, method, device):
     return predictions
     
 def write_out_submission(args,device):
+    # load in past state
+    state = torch.load('models/'+args['test_model'])
     
-    # load in test data
-    # change later when having config file ready for model saved
+    # load in related transformation hyperparameter in the past state
     test_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((324,324)),
-    transforms.Normalize(mean=(0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225))
+    transforms.Resize(state['args']['size']),
+    transforms.Normalize(mean=state['args']['norm_mean'], std = state['args']['norm_std'])
     ])
     
     test_folder_path = args['test_path']
@@ -74,8 +75,8 @@ def write_out_submission(args,device):
     test_loader = DataLoader(test_dataset, batch_size = args['bz'],shuffle=False)
 
     # load in state and model
-    state = torch.load('models/'+args['test_model'])
-    model = load_model(args)
+    model = load_model(state['args']['model'],args)
+
     if state['args']['snapshot_ensemble']:
         snapshots = state['snapshots']
         preds = test_se(test_loader, model, snapshots, args['voting'], device)
