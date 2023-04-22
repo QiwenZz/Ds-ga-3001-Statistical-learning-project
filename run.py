@@ -47,7 +47,7 @@ parser.add_argument('--momentum', default=0.9, type=float,
 parser.add_argument('--weight_decay', default=1e-4, type=float,
                     help=' weight decay (L2 penalty) for both sgd and adam')  
 parser.add_argument('--freeze_num', default=7, type=int,
-                    help='number of layers to freeze during fine tuning in CNN-like architcture')  
+                    help='number of layers to freeze during fine tuning')  
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs')   
 parser.add_argument('--patience', default=100, type=int,

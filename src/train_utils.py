@@ -3,38 +3,80 @@ import torch
 import copy
 
 
-def train(epoch, network, trainloader, criterion, optimizer, device):
-
-    print('\nEpoch: %d' % epoch)
-    network.train()
-    train_loss = 0
-    correct = 0
-    total = 0
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.to(device), targets.to(device)
-
+def train(epoch, network, trainloader, criterion, optimizer, device, args):
+    if args['model'] == 'deit':
+        print('\nEpoch: %d' % epoch)
+        network.train()
+        train_loss = 0
+        correct = 0
+        total = 0
+        teacher_model, student_model = network
+        teacher_model.train()
+        student_model.train()
         
-        outputs = network(inputs)
-        loss = criterion(outputs, targets)
-        train_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
+        for batch_idx, (inputs, targets) in enumerate(trainloader):
+            
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            with torch.no_grad():
+                teacher_outputs = teacher_model(inputs)
+    
+            student_outputs = student_model(inputs)
+            _, student_predictions = torch.max(student_outputs.data, 1)
+            
+            loss = 0.5*criterion(student_outputs, targets) + 0.5criterion(teacher_outputs, targets)
+
+            train_loss += loss.item()
+            total += targets.size(0)
+            correct += torch.sum(student_predictions == labels).item()
 
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        
 
-        progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
-                     % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+            progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
+                         % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    
+    else:
+
+        print('\nEpoch: %d' % epoch)
+        network.train()
+        train_loss = 0
+        correct = 0
+        total = 0
+        for batch_idx, (inputs, targets) in enumerate(trainloader):
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            if args['model'] == 'deit':
+                with torch.no_grad():
+                    teacher_outputs = teacher_model(inputs)
+
+            outputs = network(inputs)
+            loss = criterion(outputs, targets)
+            train_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+
+
+            progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
+                         % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
     
     return correct/total, train_loss/(batch_idx+1)
 
 
-def evaluate(epoch, network, valloader, criterion, device, verbose=True):
+def evaluate(epoch, network, valloader, criterion, device,args, verbose=True):
+    if args['model'] == 'deit':
+        _, network = network
     network.eval()
     eval_loss = 0
     correct = 0

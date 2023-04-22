@@ -26,8 +26,8 @@ def train_model(network, dataloaders, args, device):
     early_stop = EarlyStopping(args['patience'])
     metrics = []
     for epoch in range(start_epoch, start_epoch+epochs):
-        train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device)
-        val_acc, val_loss = evaluate(epoch, network, val_loader, criterion, device)
+        train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device, args)
+        val_acc, val_loss = evaluate(epoch, network, val_loader, criterion, device, args)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
         scheduler.step()
         
