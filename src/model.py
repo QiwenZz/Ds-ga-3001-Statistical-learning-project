@@ -4,7 +4,7 @@ import torch
 import timm
 
 
-def load_model(model_name, args):
+def load_model(model_name, args, device):
     if args['reuse_model'] != '':
         state = torch.load('models/'+args['reuse_model']) 
         model_name = state['args']['model']
@@ -49,16 +49,18 @@ def load_model(model_name, args):
         '''
     elif model_name == 'deit':
         # Load the teacher model
-        teacher_model = timm.create_model('deit_large_patch16_384', pretrained=True)
+        teacher_model = timm.create_model(args['teacher'], pretrained=True)
         # Freeze the teacher model's parameters
         for param in teacher_model.parameters():
             param.requires_grad = False
 
         # Load the student model
-        student_model = timm.create_model('deit_tiny_patch16_224', pretrained=True)
+        student_model = timm.create_model(args['student'], pretrained=True)
         
+        teacher_model.to(device)
+        student_model.to(device)
         return teacher_model, student_model
-    
+    model.to(device)
     return model
 
     

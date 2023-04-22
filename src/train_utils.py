@@ -6,7 +6,6 @@ import copy
 def train(epoch, network, trainloader, criterion, optimizer, device, args):
     if args['model'] == 'deit':
         print('\nEpoch: %d' % epoch)
-        network.train()
         train_loss = 0
         correct = 0
         total = 0
@@ -24,11 +23,11 @@ def train(epoch, network, trainloader, criterion, optimizer, device, args):
             student_outputs = student_model(inputs)
             _, student_predictions = torch.max(student_outputs.data, 1)
             
-            loss = 0.5*criterion(student_outputs, targets) + 0.5criterion(teacher_outputs, targets)
+            loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
 
             train_loss += loss.item()
             total += targets.size(0)
-            correct += torch.sum(student_predictions == labels).item()
+            correct += torch.sum(student_predictions == targets).item()
 
 
             optimizer.zero_grad()
@@ -98,9 +97,10 @@ def evaluate(epoch, network, valloader, criterion, device,args, verbose=True):
     return correct/total, eval_loss/(batch_idx+1)
 
 
-def evaluate_se(epoch, network, snapshots, valloader, criterion, device, method='average', verbose=True):
+def evaluate_se(epoch, network, snapshots, valloader, criterion, device, args, method='average', verbose=True):
     model_list = [copy.deepcopy(network) for _ in range(len(snapshots))]
-
+    if args['model'] == 'deit':
+        model_list = [copy.deepcopy(network[1]) for _ in range(len(snapshots))]
     for model, weight in zip(model_list, snapshots):
         model.load_state_dict(weight)
         model.eval()

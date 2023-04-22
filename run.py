@@ -61,6 +61,12 @@ parser.add_argument('--estimators', default=10, type=int,
 parser.add_argument('--voting', default='majority', type=str,
                     help='how the ensembling between different estimators is performed')  
 
+# Deit related
+parser.add_argument('--teacher', default='deit_base_distilled_patch16_224', type=str,
+                    help='teacher model for deit')
+parser.add_argument('--student', default='deit_small_distilled_patch16_224', type=str,
+                    help='student model for deit')
+
 # Testing Model Related
 parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether test a model and make prediction file')
@@ -89,7 +95,11 @@ def main(args):
         write_out_submission(args, device)
     else:
         dataloaders = get_dataloaders(args['path'], args)
-        network = load_model(args['model'],args).to(device)
+        if args['model'] == 'deit':
+            network = load_model(args['model'],args,device)
+        else:
+            network = load_model(args['model'],args,device)
+        print(next(network.parameters()).device)
         if args['snapshot_ensemble']:
             train_model_se(network, dataloaders, args, device)
         else:

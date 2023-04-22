@@ -14,9 +14,16 @@ def train_model(network, dataloaders, args, device):
 
     criterion = torch.nn.CrossEntropyLoss()
     if args['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+        if args['model'] == 'deit':
+            optimizer = torch.optim.Adam(network[1].parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+        else:
+            optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
     if args['optimizer'] == 'SGD':
-        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
+        if args['model'] == 'deit':
+            optimizer = torch.optim.SGD(network[1].parameters(), lr=args['lr'], weight_decay=args['weight_decay'],\
+                                        momentum=args['momentum'])
+        else:
+            optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
     
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2) #add more schedulers
 
@@ -38,8 +45,12 @@ def train_model(network, dataloaders, args, device):
         # Save checkpoint.
         if val_acc > best_acc:
             print('Saving..')
+            if args['model'] == 'deit':
+                weight = network[1].state_dict()
+            else:
+                weight = network.state_dict() 
             state = {
-                'net': network.state_dict(),
+                'net': weight,
                 'acc': val_acc,
                 'epoch': epoch,
                 'args' : args
@@ -73,9 +84,16 @@ def train_model_se(network, dataloaders, args, device):
 
     criterion = torch.nn.CrossEntropyLoss()
     if args['optimizer'] == 'Adam':
-        optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+        if args['model'] == 'deit':
+            optimizer = torch.optim.Adam(network[1].parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
+        else:
+            optimizer = torch.optim.Adam(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
     if args['optimizer'] == 'SGD':
-        optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
+        if args['model'] == 'deit':
+            optimizer = torch.optim.SGD(network[1].parameters(), lr=args['lr'], weight_decay=args['weight_decay'],\
+                                        momentum=args['momentum'])
+        else:
+            optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
     
     scheduler = _set_scheduler(optimizer, n_estimators, epochs)
 
@@ -91,48 +109,92 @@ def train_model_se(network, dataloaders, args, device):
     for epoch in range(start_epoch, start_epoch+epochs):
         #train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device)
         
-        # Ensemble training
-        print('\nEpoch: %d' % epoch)
-        network.train()
-        train_loss = 0
-        correct = 0
-        total = 0
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
-            inputs, targets = inputs.to(device), targets.to(device)
+        if args['model'] == 'deit':
+            print('\nEpoch: %d' % epoch)
+            train_loss = 0
+            correct = 0
+            total = 0
+            teacher_model, student_model = network
+            teacher_model.train()
+            student_model.train()
 
-            
-            outputs = network(inputs)
-            loss = criterion(outputs, targets)
-            train_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
+            for batch_idx, (inputs, targets) in enumerate(train_loader):
+
+                inputs, targets = inputs.to(device), targets.to(device)
+
+                with torch.no_grad():
+                    teacher_outputs = teacher_model(inputs)
+
+                student_outputs = student_model(inputs)
+                _, student_predictions = torch.max(student_outputs.data, 1)
+
+                loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
+
+                train_loss += loss.item()
+                total += targets.size(0)
+                correct += torch.sum(student_predictions == targets).item()
 
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            scheduler.step()
-            counter += 1
-            total_iters += 1
 
-            
 
-            progress_bar(batch_idx, len(train_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                        % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+                progress_bar(batch_idx, len(train_loader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
+                             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+                
+        else:
+            # Ensemble training
+            print('\nEpoch: %d' % epoch)
+            network.train()
+            train_loss = 0
+            correct = 0
+            total = 0
+            for batch_idx, (inputs, targets) in enumerate(train_loader):
+                inputs, targets = inputs.to(device), targets.to(device)
+
+
+                outputs = network(inputs)
+                loss = criterion(outputs, targets)
+                train_loss += loss.item()
+                _, predicted = outputs.max(1)
+                total += targets.size(0)
+                correct += predicted.eq(targets).sum().item()
+
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                scheduler.step()
+                counter += 1
+                total_iters += 1
+
+
+
+                progress_bar(batch_idx, len(train_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                            % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
         train_acc, train_loss = correct/total, train_loss/(batch_idx+1)
 
         # Save snapshot
         if counter % n_iters_per_estimator == 0:
-            snapshot = copy.deepcopy(network)
-            snapshots.append(snapshot.state_dict())
+            if args['model'] == 'deit':
+                snapshot = copy.deepcopy(network[1])
+                snapshots.append(snapshot.state_dict())
+            else:
+                snapshot = copy.deepcopy(network)
+                snapshots.append(snapshot.state_dict())
 
         # Ensemble evaluation, combine the predictions on the evaluation data
         # of the current model, and the current set of snapshots
-
-        val_acc, val_loss =  evaluate_se(epoch, network, snapshots+[copy.deepcopy(network).state_dict()], val_loader, criterion, device, method=args['voting'], verbose=True)
+        if args['model'] == 'deit':
+            snapshots = snapshots+[copy.deepcopy(network[1]).state_dict()]
+        else:
+            snapshots = snapshots+[copy.deepcopy(network).state_dict()]
+        val_acc, val_loss =  evaluate_se(epoch, network, snapshots, val_loader, criterion, device, args, method=args['voting'],\
+                                         verbose=True)
         ######
         best_acc = max(best_acc, val_acc)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
