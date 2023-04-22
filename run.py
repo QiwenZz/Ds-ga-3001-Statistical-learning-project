@@ -14,6 +14,8 @@ parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
 parser.add_argument('--smote', default=True, type=bool,
                     help='whether using smote for data augmentation')
+parser.add_argument('--smote_k', default=5, type=int,
+                    help='The nearest neighbors used to define the neighborhood of samples to use to generate the synthetic samples')
 parser.add_argument('--size', default="(399,399)", type=tuple_int_type,
                     help='size to resize')
 parser.add_argument('--bz', default=64, type=int,

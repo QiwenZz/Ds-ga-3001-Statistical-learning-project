@@ -72,7 +72,7 @@ class PlantDataset(Dataset):
         return item, self.y[idx]
     
 def smote_balance(X_train,y_train,args):
-    X_resampled, y_resampled = SMOTE(n_jobs=-1).fit_resample(X_train.reshape(len(X_train),-1), y_train)
+    X_resampled, y_resampled = SMOTE(k_neighbors = args['smote_k'],n_jobs=-1).fit_resample(X_train.reshape(len(X_train),-1), y_train)
     return torch.from_numpy(X_resampled.reshape((len(X_resampled),3,args['size'][0],args['size'][1]))), y_resampled
 
 class RandomAddGaussianNoise(object):
