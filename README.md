@@ -6,3 +6,4 @@ To Do
 - Hyperparameter tuning(Vision transformer - Qiwen)
 
 - Apply bayesian optimization package for hyperparameter tuning.
+-finish shell command file 
