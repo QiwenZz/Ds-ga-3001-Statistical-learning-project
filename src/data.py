@@ -13,6 +13,7 @@ import random
 import pickle
 import json
 import cv2
+from vanilla_process import *
 
 def create_mask_for_plant(image):
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -130,6 +131,9 @@ def get_dataloaders(path, args):
         if not os.path.isdir(f"segmentation"):
             image_segmentation(path)
             get_data('segmentation', args)
+    elif args['vanilla']: 
+        vanilla_process.main_vanilla()
+        get_data('data/vanilla', args)
     else: 
         if not os.path.isdir(f"data/processed_{args['size']}"):
             # transform data
