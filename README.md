@@ -5,5 +5,9 @@ To Do
 - Perhaps add more sophisticated augmentations (segmentations, mixup/cutmix, random augmentation, auto augmentation)
 - Hyperparameter tuning(Vision transformer - Qiwen)
 
+
+
 - Apply bayesian optimization package for hyperparameter tuning.
--finish shell command file 
+- finish shell command file 
+- Other regularization methods(Label smoothing. Stochastic depths.)
+- Add k_nerighbors for SMOTE().
