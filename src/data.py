@@ -1,3 +1,4 @@
+from vanilla_process import *
 from imblearn.over_sampling import SMOTE
 from torchvision import datasets, transforms, models
 import os
@@ -13,7 +14,7 @@ import random
 import pickle
 import json
 import cv2
-from vanilla_process import *
+#from vanilla_process import *
 
 def create_mask_for_plant(image):
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -41,15 +42,15 @@ def sharpen_image(image):
 def image_segmentation(fulldir): 
     for class_folder_name in os.listdir(fulldir):
         class_folder_path = os.path.join(fulldir, class_folder_name)
-        os.makedirs(f"segmentation/{class_folder_name}")
+        os.makedirs(f"data/segmentation/{class_folder_name}")
         for image_name in tqdm(os.listdir(class_folder_path)):
             image_org = cv2.imread(os.path.join(class_folder_path, image_name), cv2.IMREAD_COLOR)
             image_mask = create_mask_for_plant(image_org)
             image_segmented = segment_plant(image_org)
             image_sharpen = sharpen_image(image_segmented)
-            cv2.imwrite(os.path.join('segmentation', class_folder_name, image_name), image_sharpen)
+            cv2.imwrite(os.path.join('data/segmentation', class_folder_name, image_name), image_sharpen)
 
-def get_data(fulldir, args):
+def get_data(fulldir, args, seg=''):
     classes = os.listdir(fulldir)
     if '.DS_Store' in classes:
         classes.remove('.DS_Store')
@@ -67,27 +68,27 @@ def get_data(fulldir, args):
             X.append(torch.unsqueeze(convert_tensor(resizer(Image.open(path+'/'+file).convert('RGB'))),0))
             y.append(i)
     
-    os.makedirs(f"data/processed_{args['size']}")
+    os.makedirs(f"data/processed_{args['size']}{seg}")
     
     # save X
-    torch.save(torch.cat(X,dim=0), f"data/processed_{args['size']}/X.pt")
+    torch.save(torch.cat(X,dim=0), f"data/processed_{args['size']}{seg}/X.pt")
     
     # save y
-    with open(f"data/processed_{args['size']}/y.pickle", "wb") as fp:   
+    with open(f"data/processed_{args['size']}{seg}/y.pickle", "wb") as fp:   
         pickle.dump(y, fp)
     
     # save idx_to_class dictionary
-    with open(f"data/processed_{args['size']}/idx_to_class.txt", "w") as fp:
+    with open(f"data/processed_{args['size']}{seg}/idx_to_class.txt", "w") as fp:
         json.dump(idx_to_class, fp)
     
 
-def import_processed_data(args):
-    X = torch.load(f"data/processed_{args['size']}/X.pt")
+def import_processed_data(args, path):
+    X = torch.load(f"{path}/X.pt")
     
-    with open(f"data/processed_{args['size']}/y.pickle", "rb") as fp:
+    with open(f"{path}/y.pickle", "rb") as fp:
         y = pickle.load(fp)
         
-    with open(f"data/processed_{args['size']}/idx_to_class.txt", "r") as fp:
+    with open(f"{path}/idx_to_class.txt", "r") as fp:
         idx_to_class = json.load(fp)        
 
     return X, y, idx_to_class
@@ -127,19 +128,27 @@ class RandomAddGaussianNoise(object):
     
 def get_dataloaders(path, args):
 
+    if not os.path.isdir(f"data/processed_{args['size']}"):
+        # transform data
+        get_data(path, args)
+
     if args['segmentation']: 
-        if not os.path.isdir(f"segmentation"):
+        if not os.path.isdir(f"data/segmentation"):
             image_segmentation(path)
-            get_data('segmentation', args)
+        if not os.path.isdir(f"data/processed_{args['size']}_seg"):
+            get_data('data/segmentation', args, '_seg')
     elif args['vanilla']: 
         vanilla_process.main_vanilla()
         get_data('data/vanilla', args)
+
+    if args['segmentation']: 
+        X_original, y_original, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}")
+        X_new, y_new, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}_seg")
+        X = torch.cat((X_original,X_new), 0)
+        y = y_original + y_new
     else: 
-        if not os.path.isdir(f"data/processed_{args['size']}"):
-            # transform data
-            get_data(path, args)
-    
-    X, y, idx_to_class = import_processed_data(args)
+        X, y, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}")
+
     
     # split data
     X_train, X_val, y_train, y_val = train_test_split(X,y,test_size=0.2,stratify=y)
@@ -175,4 +184,3 @@ def get_dataloaders(path, args):
     val_loader = DataLoader(val_dataset, batch_size = args['bz'], drop_last=True )
     
     return train_loader, val_loader
-    
