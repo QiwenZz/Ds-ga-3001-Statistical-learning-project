@@ -65,17 +65,7 @@ def write_out_submission(args,device):
     ])
     
     test_folder_path = args['test_path']
-    if args['segmentation']: 
-        for image_name in os.listdir(args['test_path']):
-            os.makedirs("segmentation")
-            image_org = cv2.imread(os.path.join(args['test_path'], image_name), cv2.IMREAD_COLOR)
-            image_mask = create_mask_for_plant(image_org)
-            image_segmented = segment_plant(image_org)
-            image_sharpen = sharpen_image(image_segmented)
-            cv2.imwrite(os.path.join('segmentation', image_name), image_sharpen)
-        test_folder_path = 'segmentation'
-    else: 
-        test_folder_path = args['test_path']
+     
     X = []
     for file in os.listdir(test_folder_path):
         X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
