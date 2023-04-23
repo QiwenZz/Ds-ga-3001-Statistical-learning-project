@@ -94,11 +94,30 @@ def import_processed_data(args, path):
     return X, y, idx_to_class
 
 
+class PlantDataset_Seg(Dataset):
+    def __init__(self, X, X_new, y, y_new, transform=None):
+        self.transform = transform
+        self.X_total = torch.concat((X, X_new), 0)
+        self.y_total = np.concatenate((y, y_new), 0)
+        self.count = X.shape[0]
+    def __len__(self):
+        return len(self.X_total)
+    def __getitem__(self, idx):
+        #print(idx)
+        #item = self.X_total[idx]
+        #if idx < self.count: 
+        #    if self.transform:
+        #        item = self.transform(item)
+        item = self.X_total[idx]
+        if self.transform:
+            item = self.transform(item)
+        return item, self.y_total[idx]
+
 class PlantDataset(Dataset):
     def __init__(self, X, y, transform=None):
         self.transform = transform
-        self.X = X
-        self.y = y
+        self.X = X 
+        self.y = y 
     def __len__(self):
         return len(self.X)
     def __getitem__(self, idx):
@@ -144,41 +163,67 @@ def get_dataloaders(path, args):
     if args['segmentation']: 
         X_original, y_original, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}")
         X_new, y_new, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}_seg")
-        X = torch.cat((X_original,X_new), 0)
-        y = y_original + y_new
+        # split data
+        X_all = torch.stack((X_original, X_new), 1)
+        y_all = np.stack((y_original, y_new), 1)
+        X_train_all, X_val_all, y_train_all, y_val_all = train_test_split(X_all, y_all,test_size=0.2,stratify=y_all)
+        X_train = torch.concat((X_train_all[:, 0, :, :, :], X_train_all[:, 1, :, :, :]))
+        y_train = np.concatenate((y_train_all[:,0], y_train_all[:,1]), axis=0)
+        X_val = X_val_all[:, 0, :, :, :]
+        y_val = y_val_all[:,0]
+
+        if args['smote']:
+            X_resampled_org, y_resampled_org = smote_balance(X_train[:int(X_train.shape[0]/2), :, :],y_train[:int(y_train.shape[0]/2)],args)
+            X_resampled_new, y_resampled_new = smote_balance(X_train[int(X_train.shape[0]/2):, :, :],y_train[int(y_train.shape[0]/2):],args)
+        else:
+            X_resampled, y_resampled = X_train, y_train
     else: 
         X, y, idx_to_class = import_processed_data(args, f"data/processed_{args['size']}")
 
-    
-    # split data
-    X_train, X_val, y_train, y_val = train_test_split(X,y,test_size=0.2,stratify=y)
-    
-    # whether using smote
-    if args['smote']:
-        X_resampled, y_resampled = smote_balance(X_train,y_train,args)
-    else:
-        X_resampled, y_resampled = X_train, y_train
+        # split data
+        X_train, X_val, y_train, y_val = train_test_split(X,y,test_size=0.2,stratify=y)
+
+        # whether using smote
+        if args['smote']:
+            X_resampled, y_resampled = smote_balance(X_train,y_train,args)
+        else:
+            X_resampled, y_resampled = X_train, y_train
         
         
     # set up for transformation and augmentation
-    train_transform = transforms.Compose([
-    transforms.RandomRotation(180),
-    transforms.RandomAffine(degrees = 0, translate = (0.1, 0.1)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
-    RandomAddGaussianNoise(std=args['noise_std']),
-    transforms.ColorJitter(brightness=args['brightness']),
-    transforms.Normalize(mean=args['norm_mean'], std=args['norm_std'])
-    ])
+    transform_lst = [
+        transforms.RandomRotation(180),
+        transforms.RandomAffine(degrees = 0, translate = (0.1, 0.1)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        RandomAddGaussianNoise(std=args['noise_std']),
+        transforms.ColorJitter(brightness=args['brightness']),
+        transforms.Normalize(mean=args['norm_mean'], std=args['norm_std'])
+        ]
+    if args['random']: 
+        transform_lst.append(transforms.RandAugment())
+    if args['auto']: 
+        cifar = transforms.AutoAugment(transforms.AutoAugmentPolicy.CIFAR10)
+        imagenet = transforms.AutoAugment(transforms.AutoAugmentPolicy.IMAGENET)
+        cvhm = transforms.AutoAugment(transforms.AutoAugmentPolicy.SVHN)
+        transform_lst.append(cifar)
+        transform_lst.append(imagenet)
+        transform_lst.append(cvhm)
+
+    train_transform = transforms.Compose(transform_lst)
 
     val_transform = transforms.Compose([
         transforms.Normalize(mean=args['norm_mean'], std = args['norm_std'])
     ])
-    
-    #transform to torch dataset object
-    train_dataset = PlantDataset(X_resampled,y_resampled,train_transform)
-    val_dataset = PlantDataset(X_val,y_val,val_transform)
-    
+
+    if args['segmentation']: 
+        train_dataset = PlantDataset_Seg(X_resampled_org, X_resampled_new,y_resampled_org, y_resampled_new,train_transform)
+        val_dataset = PlantDataset(X_val,y_val,val_transform)
+    else: 
+        #transform to torch dataset object
+        train_dataset = PlantDataset(X_resampled,y_resampled,train_transform)
+        val_dataset = PlantDataset(X_val,y_val,val_transform)
+        
     #construct dataloader
     train_loader = DataLoader(train_dataset, batch_size = args['bz'],shuffle=args['shuffle'], drop_last=True )
     val_loader = DataLoader(val_dataset, batch_size = args['bz'], drop_last=True )
