@@ -30,6 +30,14 @@ parser.add_argument('--noise_std', default=0.05, type=float,
                     help='Adding noise with guassian distribution for data augmentation')
 parser.add_argument('--shuffle', default=True, type=bool,
                     help='whether to shuffle training data during optimization')
+parser.add_argument('--segmentation', default=False, type=bool,
+                    help='whether to segment training data during optimization')
+parser.add_argument('--random', default=False, type=bool,
+                    help='whether to random augement training data during optimization')
+parser.add_argument('--auto', default=False, type=bool,
+                    help='whether to auto augement training data during optimization')
+parser.add_argument('--test_brightness', default=False, type=bool,
+                    help='whether to add brightness for validation and testing dataset during optimization')             
 
 # Hardware Related
 parser.add_argument('--device_id', default=0, type=int,
@@ -80,33 +88,32 @@ parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
 args = vars(parser.parse_args())
 
 def main(args):
-    print('test bash')
-    print(args)
-    
-#     print(f'CUDA availability: {torch.cuda.is_available()}')
-#     if torch.cuda.is_available():
-#         for i in range(torch.cuda.device_count()):
-#             print(f'GPU name: {torch.cuda.get_device_name(i)}')
+    print(args['size'])
+    print(type(args['size']))
+    print(f'CUDA availability: {torch.cuda.is_available()}')
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            print(f'GPU name: {torch.cuda.get_device_name(i)}')
 
-#     device = torch.device("cuda:{}".format(args['device_id']) if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:{}".format(args['device_id']) if torch.cuda.is_available() else "cpu")
 
-#     if torch.cuda.is_available():
-#         print("using cuda:{}".format(args['device_id']))
-#     else:
-#          print("using {}".format(device))
-#     if args['test']:
-#         write_out_submission(args, device)
-#     else:
-#         dataloaders = get_dataloaders(args['path'], args)
-#         if args['model'] == 'deit':
-#             network = load_model(args['model'],args,device)
-#         else:
-#             network = load_model(args['model'],args,device)
-#         print(next(network.parameters()).device)
-#         if args['snapshot_ensemble']:
-#             train_model_se(network, dataloaders, args, device)
-#         else:
-#             train_model(network, dataloaders, args, device)
+    if torch.cuda.is_available():
+        print("using cuda:{}".format(args['device_id']))
+    else:
+         print("using {}".format(device))
+    if args['test']:
+        write_out_submission(args, device)
+    else:
+        dataloaders = get_dataloaders(args['path'], args)
+        if args['model'] == 'deit':
+            network = load_model(args['model'],args,device)
+        else:
+            network = load_model(args['model'],args,device)
+        print(next(network.parameters()).device)
+        if args['snapshot_ensemble']:
+            train_model_se(network, dataloaders, args, device)
+        else:
+            train_model(network, dataloaders, args, device)
         
     
     

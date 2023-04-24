@@ -9,6 +9,9 @@ import numpy as np
 import json
 from src.model import load_model
 import copy
+from data import create_mask_for_plant, segment_plant, sharpen_image
+import tqdm
+import cv2
 
 class PlantTestDataset(Dataset):
     def __init__(self, X):
@@ -60,17 +63,37 @@ def write_out_submission(args,device):
     state = torch.load('models/'+args['test_model'])
     
     # load in related transformation hyperparameter in the past state
-    test_transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize(state['args']['size']),
-    transforms.Normalize(mean=state['args']['norm_mean'], std = state['args']['norm_std'])
-    ])
+    if args['test_brightness']: 
+        test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize(state['args']['size']),
+        transforms.ColorJitter(brightness=args['brightness']),
+        transforms.Normalize(mean=state['args']['norm_mean'], std = state['args']['norm_std'])
+        ])
+    else: 
+        test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize(state['args']['size']),
+        transforms.Normalize(mean=state['args']['norm_mean'], std = state['args']['norm_std'])
+        ])
     
     test_folder_path = args['test_path']
     X = []
-    for file in os.listdir(test_folder_path):
-        X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
-    
+    if args['segmentation']: 
+        for class_folder_name in os.listdir(test_folder_path):
+            os.makedirs(f"data/segmentation_test")
+            for image_name in tqdm(os.listdir(test_folder_path)):
+                image_org = cv2.imread(os.path.join(test_folder_path, image_name), cv2.IMREAD_COLOR)
+                image_mask = create_mask_for_plant(image_org)
+                image_segmented = segment_plant(image_org)
+                image_sharpen = sharpen_image(image_segmented)
+                cv2.imwrite(os.path.join('data/segmentation_test', class_folder_name, image_name), image_sharpen)
+        for file in os.listdir(test_folder_path):
+            X.append(torch.unsqueeze(test_transform(Image.open('data/segmentation_test'+'/'+file).convert('RGB')),0))
+    else: 
+        for file in os.listdir(test_folder_path):
+            X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
+        
     test_dataset = PlantTestDataset(torch.cat(X,dim=0))
     test_loader = DataLoader(test_dataset, batch_size = args['bz'],shuffle=False)
 
