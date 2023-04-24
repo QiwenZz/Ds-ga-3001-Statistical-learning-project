@@ -1,59 +1,65 @@
-if [[ $# -ne 1 ]]; then
-  GPUID=0
-else
-  GPUID=$1
-fi
+#!/bin/bash
+python run.py --path data/train \
+--smote true \
+--smote_k 10 \
+--size "(224,224)" \
+--bz 32 \
+--norm_mean "(0.485,0.456,0.406)" \
+--norm_std "(0.229,0.224,0.225)" \
+--brightness "(1,2)" \
+--noise_std 0.5 \
+--shuffle false \
 
-echo "Run on GPU $GPUID"
 
-# data
-PROJECT_ROOT=$(dirname "$(readlink -f "$0")")/..
-DATA_ROOT=$PROJECT_ROOT/dataset/conll03_distant/
 
-# model
-MODEL_TYPE=roberta
-MODEL_NAME=roberta-base
 
-# params
-LR=1e-5
-WEIGHT_DECAY=1e-4
-EPOCH=50
-SEED=0
 
-ADAM_EPS=1e-8
-ADAM_BETA1=0.9
-ADAM_BETA2=0.98
-WARMUP=200
+# parser.add_argument('--shuffle', default=True, type=bool,
+#                     help='whether to shuffle training data during optimization')
 
-TRAIN_BATCH=16
-EVAL_BATCH=32
+# # Hardware Related
+# parser.add_argument('--device_id', default=0, type=int,
+#                     help='the id of the gpu to use')   
 
-# output
-OUTPUT=$PROJECT_ROOT/outputs/conll03/baseline/${MODEL_TYPE}_${EPOCH}_${LR}/
+# # Training Arguments
+# parser.add_argument('--model', default='resnet50', type=str,
+#                     help='the model to use for training or make predictions')
+# parser.add_argument('--reuse_model', default='', type=str,
+#                     help='the name of the model to reuse for finetuning on new data')
+# parser.add_argument('--optimizer', default='Adam', type=str,
+#                     help='the optimizer to use')
+# parser.add_argument('--lr', default=0.001, type=float,
+#                     help='the optimizers learning rate')  
+# parser.add_argument('--momentum', default=0.9, type=float,
+#                     help='momentum factor for sgd')  
+# parser.add_argument('--weight_decay', default=1e-4, type=float,
+#                     help=' weight decay (L2 penalty) for both sgd and adam')  
+# parser.add_argument('--freeze_num', default=7, type=int,
+#                     help='number of layers to freeze during fine tuning')  
+# parser.add_argument('--epochs', default=100, type=int,
+#                     help='number of epochs')   
+# parser.add_argument('--patience', default=100, type=int,
+#                     help='patience for early stop')   
 
-[ -e $OUTPUT/script  ] || mkdir -p $OUTPUT/script
-cp -f $(readlink -f "$0") $OUTPUT/script
-rsync -ruzC --exclude-from=$PROJECT_ROOT/.gitignore --exclude 'dataset' --exclude 'pretrained_model' --exclude 'outputs' $PROJECT_ROOT/ $OUTPUT/src
+# # Ensembling Arguments
+# parser.add_argument('--snapshot_ensemble', default=False, type=bool,
+#                     help='whether snapshot ensembling to be performed')
+# parser.add_argument('--estimators', default=10, type=int,
+#                     help='number of estimators to be ensembled')  
+# parser.add_argument('--voting', default='majority', type=str,
+#                     help='how the ensembling between different estimators is performed')  
 
-CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=$GPUID python3 run_ner.py --data_dir $DATA_ROOT \
-  --model_type $MODEL_TYPE --model_name_or_path $MODEL_NAME \
-  --learning_rate $LR \
-  --weight_decay $WEIGHT_DECAY \
-  --adam_epsilon $ADAM_EPS \
-  --adam_beta1 $ADAM_BETA1 \
-  --adam_beta2 $ADAM_BETA2 \
-  --num_train_epochs $EPOCH \
-  --warmup_steps $WARMUP \
-  --per_gpu_train_batch_size $TRAIN_BATCH \
-  --per_gpu_eval_batch_size $EVAL_BATCH \
-  --logging_steps 100 \
-  --save_steps 100000 \
-  --do_train \
-  --do_eval \
-  --do_predict \
-  --evaluate_during_training \
-  --output_dir $OUTPUT \
-  --cache_dir $PROJECT_ROOT/pretrained_model \
-  --seed $SEED \
-  --max_seq_length 128 \
-  --overwrite_output_dir
+# # Deit related
+# parser.add_argument('--teacher', default='deit_base_distilled_patch16_224', type=str,
+#                     help='teacher model for deit')
+# parser.add_argument('--student', default='deit_small_distilled_patch16_224', type=str,
+#                     help='student model for deit')
+
+# # Testing Model Related
+# parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),
+#                     help='whether test a model and make prediction file')
+# parser.add_argument('--test_path', default='data/test', type=str,
+#                     help='path of the test data foler')
+# parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
+#                     help='the model that will be used to produce predictions')
+
