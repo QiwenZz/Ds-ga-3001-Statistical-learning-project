@@ -7,6 +7,7 @@ from torch.optim.lr_scheduler import LambdaLR
 import math
 import copy
 from src.utils import *
+import json
 
 def train_model(network, dataloaders, args, device):
     train_loader, val_loader = dataloaders
@@ -26,7 +27,7 @@ def train_model(network, dataloaders, args, device):
             optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
     
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2) #add more schedulers
-
+    
     # main train loop
     best_acc = 0  # best val accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
@@ -60,6 +61,11 @@ def train_model(network, dataloaders, args, device):
     state.update({'metrics': np.array(metrics)})
     
     torch.save(state,'./models/'+str(best_acc)+'.pth')
+    
+    if args['log']:
+        # save args into json dictionary
+        with open('./models/'+str(best_acc)+".txt", "w") as fp:
+            json.dump(args, fp, indent=2)
     
     
     
@@ -205,3 +211,7 @@ def train_model_se(network, dataloaders, args, device):
 
     state = {'snapshots': snapshots, 'metrics': np.array(metrics), 'args':args}
     torch.save(state,  './models/'+str(best_acc)+'.pth')
+    if args['log']:
+        # save args into json dictionary
+        with open('./models/'+str(best_acc)+".txt", "w") as fp:
+            json.dump(args, fp, indent=2)

@@ -1,19 +1,54 @@
 #!/bin/bash
+
 python run.py --path data/train \
---smote true \
---smote_k 10 \
---size "(224,224)" \
---bz 32 \
+--smote False \
+--smote_k 5 \
+--size "(64,64)" \
+--bz 64 \
 --norm_mean "(0.485,0.456,0.406)" \
 --norm_std "(0.229,0.224,0.225)" \
---brightness "(1,2)" \
---noise_std 0.5 \
---shuffle false \
+--brightness "(0.8,2)" \
+--noise_std 0.05 \
+--shuffle True \
+--device_id 0 \
+--model resnet50 \
+--reuse_model '' \
+--optimizer Adam \
+--lr 0.001 \
+--momentum 0.9 \
+--weight_decay 1e-4 \
+--freeze_num 7 \
+--epochs 100 \
+--patience 100 \
+--snapshot_ensemble False \
+--log True \
+--estimators 10 \
+--voting majority \
+--teacher deit_base_distilled_patch16_224 \
+--student deit_small_distilled_patch16_224 \
+--test False \
+--test_path data/test \
+--test_model 0.9787946428571429.pth \
 
-
-
-
-
+# # Data Tuning Related
+# parser.add_argument('--path', default='data/train', type=str,
+#                     help='path of the root data foler')
+# parser.add_argument('--smote', default=True, type=bool,
+#                     help='whether using smote for data augmentation')
+# parser.add_argument('--smote_k', default=5, type=int,
+#                     help='The nearest neighbors used to define the neighborhood of samples to use to generate the synthetic samples')
+# parser.add_argument('--size', default="(399,399)", type=tuple_int_type,
+#                     help='size to resize')
+# parser.add_argument('--bz', default=64, type=int,
+#                     help='batch size')
+# parser.add_argument('--norm_mean', default="(0.485,0.456,0.406)", type=tuple_float_type,
+#                     help='Mean value of z-scoring normalization for each channel in image')
+# parser.add_argument('--norm_std', default="(0.229,0.224,0.225)", type=tuple_float_type,
+#                     help='Mean value of z-scoring standard deviation for each channel in image')
+# parser.add_argument('--brightness', default="(0.8,2)", type=tuple_float_type,
+#                     help='Brightness range for data augmentation')
+# parser.add_argument('--noise_std', default=0.05, type=float,
+#                     help='Adding noise with guassian distribution for data augmentation')
 # parser.add_argument('--shuffle', default=True, type=bool,
 #                     help='whether to shuffle training data during optimization')
 
@@ -62,4 +97,3 @@ python run.py --path data/train \
 #                     help='path of the test data foler')
 # parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
 #                     help='the model that will be used to produce predictions')
-

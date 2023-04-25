@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 # Data Tuning Related
 parser.add_argument('--path', default='data/train', type=str,
                     help='path of the root data foler')
-parser.add_argument('--smote', default=True, type=bool,
+parser.add_argument('--smote', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether using smote for data augmentation')
 parser.add_argument('--smote_k', default=5, type=int,
                     help='The nearest neighbors used to define the neighborhood of samples to use to generate the synthetic samples')
@@ -28,7 +28,7 @@ parser.add_argument('--brightness', default="(0.8,2)", type=tuple_float_type,
                     help='Brightness range for data augmentation')
 parser.add_argument('--noise_std', default=0.05, type=float,
                     help='Adding noise with guassian distribution for data augmentation')
-parser.add_argument('--shuffle', default=True, type=bool,
+parser.add_argument('--shuffle', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to shuffle training data during optimization')
 
 # Hardware Related
@@ -38,6 +38,8 @@ parser.add_argument('--device_id', default=0, type=int,
 # Training Arguments
 parser.add_argument('--model', default='resnet50', type=str,
                     help='the model to use for training or make predictions')
+parser.add_argument('--log', default=False, type=lambda x: (str(x).lower() == 'true'),
+                    help='whether to generate a json file with args along with the model')
 parser.add_argument('--reuse_model', default='', type=str,
                     help='the name of the model to reuse for finetuning on new data')
 parser.add_argument('--optimizer', default='Adam', type=str,
@@ -56,7 +58,7 @@ parser.add_argument('--patience', default=100, type=int,
                     help='patience for early stop')   
 
 # Ensembling Arguments
-parser.add_argument('--snapshot_ensemble', default=False, type=bool,
+parser.add_argument('--snapshot_ensemble', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether snapshot ensembling to be performed')
 parser.add_argument('--estimators', default=10, type=int,
                     help='number of estimators to be ensembled')  
@@ -80,33 +82,30 @@ parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
 args = vars(parser.parse_args())
 
 def main(args):
-    print('test bash')
-    print(args)
-    
-#     print(f'CUDA availability: {torch.cuda.is_available()}')
-#     if torch.cuda.is_available():
-#         for i in range(torch.cuda.device_count()):
-#             print(f'GPU name: {torch.cuda.get_device_name(i)}')
+    print(f'CUDA availability: {torch.cuda.is_available()}')
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            print(f'GPU name: {torch.cuda.get_device_name(i)}')
 
-#     device = torch.device("cuda:{}".format(args['device_id']) if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:{}".format(args['device_id']) if torch.cuda.is_available() else "cpu")
 
-#     if torch.cuda.is_available():
-#         print("using cuda:{}".format(args['device_id']))
-#     else:
-#          print("using {}".format(device))
-#     if args['test']:
-#         write_out_submission(args, device)
-#     else:
-#         dataloaders = get_dataloaders(args['path'], args)
-#         if args['model'] == 'deit':
-#             network = load_model(args['model'],args,device)
-#         else:
-#             network = load_model(args['model'],args,device)
-#         print(next(network.parameters()).device)
-#         if args['snapshot_ensemble']:
-#             train_model_se(network, dataloaders, args, device)
-#         else:
-#             train_model(network, dataloaders, args, device)
+    if torch.cuda.is_available():
+        print("using cuda:{}".format(args['device_id']))
+    else:
+         print("using {}".format(device))
+    if args['test']:
+        write_out_submission(args, device)
+    else:
+        dataloaders = get_dataloaders(args['path'], args)
+        if args['model'] == 'deit':
+            network = load_model(args['model'],args,device)
+        else:
+            network = load_model(args['model'],args,device)
+        print(next(network.parameters()).device)
+        if args['snapshot_ensemble']:
+            train_model_se(network, dataloaders, args, device)
+        else:
+            train_model(network, dataloaders, args, device)
         
     
     
