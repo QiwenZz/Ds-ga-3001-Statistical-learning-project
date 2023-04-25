@@ -81,19 +81,20 @@ def write_out_submission(args,device):
     X = []
     if args['segmentation']: 
         for class_folder_name in os.listdir(test_folder_path):
-            os.makedirs(f"data/segmentation_test")
-            for image_name in tqdm(os.listdir(test_folder_path)):
-                image_org = cv2.imread(os.path.join(test_folder_path, image_name), cv2.IMREAD_COLOR)
-                image_mask = create_mask_for_plant(image_org)
-                image_segmented = segment_plant(image_org)
-                image_sharpen = sharpen_image(image_segmented)
-                cv2.imwrite(os.path.join('data/segmentation_test', class_folder_name, image_name), image_sharpen)
-        for file in os.listdir(test_folder_path):
+            if not os.path.isdir("data/segmentation_test"):
+                os.makedirs("data/segmentation_test")
+                for image_name in tqdm(os.listdir(test_folder_path)):
+                    image_org = cv2.imread(os.path.join(test_folder_path, image_name), cv2.IMREAD_COLOR)
+                    image_mask = create_mask_for_plant(image_org)
+                    image_segmented = segment_plant(image_org)
+                    image_sharpen = sharpen_image(image_segmented)
+                    cv2.imwrite(os.path.join('data/segmentation_test', image_name), image_sharpen)
+        for file in os.listdir("data/segmentation_test"):
             X.append(torch.unsqueeze(test_transform(Image.open('data/segmentation_test'+'/'+file).convert('RGB')),0))
     else: 
         for file in os.listdir(test_folder_path):
             X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
-        
+    
     test_dataset = PlantTestDataset(torch.cat(X,dim=0))
     test_loader = DataLoader(test_dataset, batch_size = args['bz'],shuffle=False)
 
