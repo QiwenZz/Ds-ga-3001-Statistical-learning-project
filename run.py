@@ -134,6 +134,8 @@ def main(args):
             # Print the best hyperparameters and validation accuracy
             print('Best hyperparameters: ', study.best_params)
             print('Best validation accuracy: ', study.best_value)
+            with open('./models/'+str(study.best_value)+"best_params.txt", "w") as fp:
+                json.dump(study.best_params, fp, indent=2)
         else:
             if args['model'] == 'deit':
                 network = load_model(args['model'],args,device)
