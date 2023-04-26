@@ -13,6 +13,8 @@ python run.py --path data/train \
 --device_id 0 \
 --model deit \
 --reuse_model '' \
+--optuna False \
+--optuna_trials 5 \
 --optimizer SGD \
 --lr 0.001 \
 --momentum 0.9 \
