@@ -56,7 +56,14 @@ def load_model(model_name, args, device):
 
         # Load the student model
         student_model = timm.create_model(args['student'], pretrained=True)
-        
+        n_inputs = student_model.head.in_features
+        student_model.head = nn.Sequential(
+            nn.Linear(n_inputs, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, 12)
+        )
+
         teacher_model.to(device)
         student_model.to(device)
         return teacher_model, student_model
