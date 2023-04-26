@@ -6,6 +6,7 @@ from src.engine import train_model, train_model_se
 from src.model import load_model
 from src.out import write_out_submission
 from src.utils import tuple_float_type,tuple_int_type
+import optuna
 
 parser = argparse.ArgumentParser()
 
@@ -20,9 +21,9 @@ parser.add_argument('--size', default="(399,399)", type=tuple_int_type,
                     help='size to resize')
 parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
-parser.add_argument('--norm_mean', default="(0.485,0.456,0.406)", type=tuple_float_type,
+parser.add_argument('--norm_mean', default="(0.3272, 0.2874, 0.2038)", type=tuple_float_type,
                     help='Mean value of z-scoring normalization for each channel in image')
-parser.add_argument('--norm_std', default="(0.229,0.224,0.225)", type=tuple_float_type,
+parser.add_argument('--norm_std', default="(0.0965, 0.1009, 0.1173)", type=tuple_float_type,
                     help='Mean value of z-scoring standard deviation for each channel in image')
 parser.add_argument('--brightness', default="(0.8,2)", type=tuple_float_type,
                     help='Brightness range for data augmentation')
@@ -42,6 +43,10 @@ parser.add_argument('--log', default=False, type=lambda x: (str(x).lower() == 't
                     help='whether to generate a json file with args along with the model')
 parser.add_argument('--reuse_model', default='', type=str,
                     help='the name of the model to reuse for finetuning on new data')
+parser.add_argument('--optuna', default=False, type=lambda x: (str(x).lower() == 'true'),
+                    help='whether use optuna to find the best hyperparameters')
+parser.add_argument('--optuna_trials', default=3, type=int,
+                    help='number of trials to find the best parameter, the larger the better')
 parser.add_argument('--optimizer', default='Adam', type=str,
                     help='the optimizer to use')
 parser.add_argument('--lr', default=0.001, type=float,
@@ -54,7 +59,7 @@ parser.add_argument('--freeze_num', default=7, type=int,
                     help='number of layers to freeze during fine tuning')  
 parser.add_argument('--epochs', default=100, type=int,
                     help='number of epochs')   
-parser.add_argument('--patience', default=100, type=int,
+parser.add_argument('--patience', default=5, type=int,
                     help='patience for early stop')   
 
 # Ensembling Arguments
@@ -81,6 +86,32 @@ parser.add_argument('--test_model', default='0.9787946428571429.pth', type=str,
 
 args = vars(parser.parse_args())
 
+
+def objective(trial,args,device,dataloaders):
+    # Define the hyperparameters to be tuned
+    lr = trial.suggest_float(
+        "lr", 1e-6, 1e-2, log=True
+    )
+    momentum = trial.suggest_float("momentum", 0.0, 1.0)
+    weight_decay = trial.suggest_loguniform('weight_decay', 1e-6, 1e-3)
+    
+    # Pass the hyperparameters to the load_model function
+    args['lr'] = lr
+    args['momentum'] = momentum
+    args['weight_decay'] = weight_decay
+    
+    if args['model'] == 'deit':
+        network = load_model(args['model'],args,device)
+    else:
+        network = load_model(args['model'],args,device)
+    if args['snapshot_ensemble']:
+        best_acc = train_model_se(network, dataloaders, args, device)
+    else:
+        best_acc = train_model(network, dataloaders, args, device)
+
+    return best_acc
+
+
 def main(args):
     print(f'CUDA availability: {torch.cuda.is_available()}')
     if torch.cuda.is_available():
@@ -97,15 +128,21 @@ def main(args):
         write_out_submission(args, device)
     else:
         dataloaders = get_dataloaders(args['path'], args)
-        if args['model'] == 'deit':
-            network = load_model(args['model'],args,device)
+        if args['optuna']:
+            study = optuna.create_study(direction="maximize")
+            study.optimize(lambda trial: objective(trial, args,device,dataloaders), n_trials=args['optuna_trials'])
+            # Print the best hyperparameters and validation accuracy
+            print('Best hyperparameters: ', study.best_params)
+            print('Best validation accuracy: ', study.best_value)
         else:
-            network = load_model(args['model'],args,device)
-        print(next(network.parameters()).device)
-        if args['snapshot_ensemble']:
-            train_model_se(network, dataloaders, args, device)
-        else:
-            train_model(network, dataloaders, args, device)
+            if args['model'] == 'deit':
+                network = load_model(args['model'],args,device)
+            else:
+                network = load_model(args['model'],args,device)
+            if args['snapshot_ensemble']:
+                train_model_se(network, dataloaders, args, device)
+            else:
+                train_model(network, dataloaders, args, device)
         
     
     

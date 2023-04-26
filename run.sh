@@ -1,31 +1,31 @@
 #!/bin/bash
 
 python run.py --path data/train \
---smote False \
+--smote True \
 --smote_k 5 \
---size "(64,64)" \
---bz 64 \
---norm_mean "(0.485,0.456,0.406)" \
---norm_std "(0.229,0.224,0.225)" \
+--size "(384,384)" \
+--bz 32 \
+--norm_mean "(0.3272, 0.2874, 0.2038)" \
+--norm_std "(0.0965, 0.1009, 0.1173)" \
 --brightness "(0.8,2)" \
 --noise_std 0.05 \
 --shuffle True \
 --device_id 0 \
---model resnet50 \
+--model deit \
 --reuse_model '' \
---optimizer Adam \
+--optimizer SGD \
 --lr 0.001 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
 --freeze_num 7 \
 --epochs 100 \
---patience 100 \
---snapshot_ensemble False \
+--patience 5 \
+--snapshot_ensembleTrue \
 --log True \
 --estimators 10 \
 --voting majority \
---teacher deit_base_distilled_patch16_224 \
---student deit_small_distilled_patch16_224 \
+--teacher deit_base_distilled_patch16_384 \
+--student deit_base_distilled_patch16_384 \
 --test False \
 --test_path data/test \
 --test_model 0.9787946428571429.pth \

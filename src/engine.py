@@ -67,6 +67,8 @@ def train_model(network, dataloaders, args, device):
         with open('./models/'+str(best_acc)+".txt", "w") as fp:
             json.dump(args, fp, indent=2)
     
+    return best_acc
+    
     
     
 def _set_scheduler(optimizer, n_estimators, n_iters):
@@ -215,3 +217,5 @@ def train_model_se(network, dataloaders, args, device):
         # save args into json dictionary
         with open('./models/'+str(best_acc)+".txt", "w") as fp:
             json.dump(args, fp, indent=2)
+    
+    return best_acc
