@@ -61,8 +61,8 @@ def write_out_submission(args,device):
     
     # load in related transformation hyperparameter in the past state
     test_transform = transforms.Compose([
-    transforms.ToTensor(),
     transforms.Resize(state['args']['size']),
+    transforms.ToTensor(),
     transforms.Normalize(mean=state['args']['norm_mean'], std = state['args']['norm_std'])
     ])
     
@@ -75,7 +75,7 @@ def write_out_submission(args,device):
     test_loader = DataLoader(test_dataset, batch_size = args['bz'],shuffle=False)
 
     # load in state and model
-    model = load_model(state['args']['model'],args)
+    model = load_model(state['args']['model'],args,device)
 
     if state['args']['snapshot_ensemble']:
         snapshots = state['snapshots']

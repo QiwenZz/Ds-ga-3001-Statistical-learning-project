@@ -195,12 +195,12 @@ def train_model_se(network, dataloaders, args, device):
 
         # Ensemble evaluation, combine the predictions on the evaluation data
         # of the current model, and the current set of snapshots
-        if args['model'] == 'deit':
-            snapshots = snapshots+[copy.deepcopy(network[1]).state_dict()]
-        else:
-            snapshots = snapshots+[copy.deepcopy(network).state_dict()]
-        val_acc, val_loss =  evaluate_se(epoch, network, snapshots, val_loader, criterion, device, args, method=args['voting'],\
-                                         verbose=True)
+        #if args['model'] == 'deit':
+        #    snapshots = snapshots+[copy.deepcopy(network[1]).state_dict()]
+        #else:
+        #    snapshots = snapshots+[copy.deepcopy(network).state_dict()]
+        val_acc, val_loss =  evaluate_se(epoch, network, snapshots+[copy.deepcopy(network).state_dict() if not args['model'] == 'deit' else copy.deepcopy(network[1]).state_dict()],\
+                                val_loader, criterion, device, args, method=args['voting'],verbose=True)
         ######
         best_acc = max(best_acc, val_acc)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
