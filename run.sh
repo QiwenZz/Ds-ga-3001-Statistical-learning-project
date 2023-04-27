@@ -23,7 +23,7 @@ python run.py --path data/train \
 --freeze_num 7 \
 --epochs 100 \
 --patience 5 \
---snapshot_ensembleTrue \
+--snapshot_ensemble True \
 --log True \
 --estimators 10 \
 --voting majority \
