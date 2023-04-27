@@ -9,6 +9,10 @@ import numpy as np
 import json
 from src.model import load_model
 import copy
+from src.data import create_mask_for_plant, segment_plant, sharpen_image
+import tqdm
+import cv2
+
 
 class PlantTestDataset(Dataset):
     def __init__(self, X):
@@ -68,8 +72,21 @@ def write_out_submission(args,device):
     
     test_folder_path = args['test_path']
     X = []
-    for file in os.listdir(test_folder_path):
-        X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
+    if args['segmentation']: 
+        for class_folder_name in os.listdir(test_folder_path):
+            if not os.path.isdir("data/segmentation_test"):
+                os.makedirs("data/segmentation_test")
+                for image_name in tqdm(os.listdir(test_folder_path)):
+                    image_org = cv2.imread(os.path.join(test_folder_path, image_name), cv2.IMREAD_COLOR)
+                    image_mask = create_mask_for_plant(image_org)
+                    image_segmented = segment_plant(image_org)
+                    image_sharpen = sharpen_image(image_segmented)
+                    cv2.imwrite(os.path.join('data/segmentation_test', image_name), image_sharpen)
+        for file in os.listdir("data/segmentation_test"):
+            X.append(torch.unsqueeze(test_transform(Image.open('data/segmentation_test'+'/'+file).convert('RGB')),0))
+    else: 
+        for file in os.listdir(test_folder_path):
+            X.append(torch.unsqueeze(test_transform(Image.open(test_folder_path+'/'+file).convert('RGB')),0))
     
     test_dataset = PlantTestDataset(torch.cat(X,dim=0))
     test_loader = DataLoader(test_dataset, batch_size = args['bz'],shuffle=False)
@@ -93,8 +110,12 @@ def write_out_submission(args,device):
     file['species'] = predictions
     file['species'] = file['species'].astype('str')
     
-    with open(f"data/processed_{args['size']}/idx_to_class.txt", "r") as fp:
-        idx_to_class = json.load(fp)         
+    if args['segmentation']: 
+        with open(f"data/processed_{args['size']}_seg/idx_to_class.txt", "r") as fp:
+            idx_to_class = json.load(fp)    
+    else: 
+        with open(f"data/processed_{args['size']}/idx_to_class.txt", "r") as fp:
+            idx_to_class = json.load(fp)  
         
     file = file.replace({"species": idx_to_class})
     
