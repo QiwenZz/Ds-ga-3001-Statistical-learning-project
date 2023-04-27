@@ -17,7 +17,7 @@ parser.add_argument('--smote', default=False, type=lambda x: (str(x).lower() == 
                     help='whether using smote for data augmentation')
 parser.add_argument('--smote_k', default=5, type=int,
                     help='The nearest neighbors used to define the neighborhood of samples to use to generate the synthetic samples')
-parser.add_argument('--size', default="(399,399)", type=tuple_int_type,
+parser.add_argument('--size', default="(224,224)", type=tuple_int_type,
                     help='size to resize')
 parser.add_argument('--bz', default=64, type=int,
                     help='batch size')
@@ -77,6 +77,8 @@ parser.add_argument('--teacher', default='deit_base_distilled_patch16_224', type
                     help='teacher model for deit')
 parser.add_argument('--student', default='deit_small_distilled_patch16_224', type=str,
                     help='student model for deit')
+parser.add_argument('--student_only', default=False, type=lambda x: (str(x).lower() == 'true'),
+                    help='use student only for fine tuning')
 
 # Testing Model Related
 parser.add_argument('--test', default=False, type=lambda x: (str(x).lower() == 'true'),

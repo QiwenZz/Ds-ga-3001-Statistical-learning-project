@@ -17,13 +17,20 @@ def train(epoch, network, trainloader, criterion, optimizer, device, args):
             
             inputs, targets = inputs.to(device), targets.to(device)
 
-            with torch.no_grad():
-                teacher_outputs = teacher_model(inputs)
     
             student_outputs = student_model(inputs)
             _, student_predictions = torch.max(student_outputs.data, 1)
             
-            loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
+            if not args['student_only']:
+                with torch.no_grad():
+                    teacher_outputs = teacher_model(inputs)
+                loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
+            else:
+                loss = criterion(student_outputs, targets)
+
+            train_loss += loss.item()
+            total += targets.size(0)
+            correct += torch.sum(student_predictions == targets).item()
 
             train_loss += loss.item()
             total += targets.size(0)

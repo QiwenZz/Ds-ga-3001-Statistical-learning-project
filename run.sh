@@ -3,8 +3,8 @@
 python run.py --path data/train \
 --smote True \
 --smote_k 5 \
---size "(384,384)" \
---bz 32 \
+--size "(224,224)" \
+--bz 4 \
 --norm_mean "(0.3272, 0.2874, 0.2038)" \
 --norm_std "(0.0965, 0.1009, 0.1173)" \
 --brightness "(0.8,2)" \
@@ -16,8 +16,8 @@ python run.py --path data/train \
 --optuna False \
 --optuna_trials 5 \
 --optimizer SGD \
---schedular cosineannealing \
---lr 0.001 \
+--schedul3r cosineannealing \
+--lr 0.01 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
 --freeze_num 7 \
@@ -27,8 +27,9 @@ python run.py --path data/train \
 --log True \
 --estimators 10 \
 --voting majority \
---teacher deit_base_distilled_patch16_384 \
---student deit_base_distilled_patch16_384 \
+--teacher deit_base_distilled_patch16_224 \
+--student deit_base_distilled_patch16_224 \
+--student_only True \
 --test False \
 --test_path data/test \
 --test_model 0.9787946428571429.pth \

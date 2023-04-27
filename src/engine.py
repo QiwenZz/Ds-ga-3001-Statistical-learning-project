@@ -121,7 +121,7 @@ def train_model_se(network, dataloaders, args, device):
     total_iters = 0
     n_iters_per_estimator = epochs * len(train_loader) // n_estimators
     for epoch in range(start_epoch, start_epoch+epochs):
-        #train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device)
+
         
         if args['model'] == 'deit':
             print('\nEpoch: %d' % epoch)
@@ -136,13 +136,15 @@ def train_model_se(network, dataloaders, args, device):
 
                 inputs, targets = inputs.to(device), targets.to(device)
 
-                with torch.no_grad():
-                    teacher_outputs = teacher_model(inputs)
-
                 student_outputs = student_model(inputs)
                 _, student_predictions = torch.max(student_outputs.data, 1)
 
-                loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
+                if not args['student_only']:
+                    with torch.no_grad():
+                        teacher_outputs = teacher_model(inputs)
+                    loss = 0.5*criterion(student_outputs, targets) + 0.5*criterion(teacher_outputs, targets)
+                else:
+                    loss = criterion(student_outputs, targets)
 
                 train_loss += loss.item()
                 total += targets.size(0)
