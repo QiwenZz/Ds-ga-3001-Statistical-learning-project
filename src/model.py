@@ -50,25 +50,6 @@ def load_model(model_name, args, device):
     elif model_name == 'deit':
         if not args['student_only']:
             
-            #Load the teacher model
-            teacher_model = timm.create_model(args['teacher'], pretrained=True)
-            # Freeze the teacher model's parameters
-            for param in teacher_model.parameters():
-                param.requires_grad = False
-
-            # Load the student model
-            student_model = timm.create_model(args['student'], pretrained=True)
-#             n_inputs = student_model.head.in_features
-#             student_model.head = nn.Sequential(
-#                 torch.nn.Linear(n_inputs, 512),
-#                 torch.nn.ReLU(),
-#                 torch.nn.Dropout(0.3),
-#                 torch.nn.Linear(512, 12)
-#             )
-
-
-        else:
-        
             teacher_model = timm.create_model(args['teacher'], pretrained=True)
             # Freeze the teacher model's parameters
             for param in teacher_model.parameters():
@@ -78,6 +59,12 @@ def load_model(model_name, args, device):
             student_model = timm.create_model(args['student'], pretrained=True)
             n_inputs = student_model.head.in_features
             student_model.head = torch.nn.Sequential(
+                torch.nn.Linear(n_inputs, 512),
+                torch.nn.ReLU(),
+                torch.nn.Dropout(0.3),
+                torch.nn.Linear(512, 12)
+            )
+            student_model.head_dist = torch.nn.Sequential(
                 torch.nn.Linear(n_inputs, 512),
                 torch.nn.ReLU(),
                 torch.nn.Dropout(0.3),
