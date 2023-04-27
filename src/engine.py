@@ -14,6 +14,7 @@ def train_model(network, dataloaders, args, device):
     epochs = args['epochs']
 
     criterion = torch.nn.CrossEntropyLoss()
+    
     if args['optimizer'] == 'Adam':
         if args['model'] == 'deit':
             optimizer = torch.optim.Adam(network[1].parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
@@ -25,8 +26,10 @@ def train_model(network, dataloaders, args, device):
                                         momentum=args['momentum'])
         else:
             optimizer = torch.optim.SGD(network.parameters(), lr=args['lr'], weight_decay=args['weight_decay'], momentum=args['momentum'])
-    
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2) #add more schedulers
+    if args['scheduler'] == 'steplr':
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2) #add more schedulers
+    elif args['scheduler'] == 'cosineannealing':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=1, eta_min=0.0001)
     
     # main train loop
     best_acc = 0  # best val accuracy
@@ -37,7 +40,10 @@ def train_model(network, dataloaders, args, device):
         train_acc, train_loss = train(epoch, network, train_loader, criterion, optimizer, device, args)
         val_acc, val_loss = evaluate(epoch, network, val_loader, criterion, device, args)
         metrics.append([train_acc, train_loss, val_acc, val_loss])
-        scheduler.step()
+        if args['scheduler'] == 'cosineannealing':
+            scheduler.step(epoch)
+        else:
+            scheduler.step()
         
         early_stop(val_loss)
         if early_stop.early_stop:

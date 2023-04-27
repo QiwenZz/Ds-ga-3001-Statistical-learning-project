@@ -49,6 +49,8 @@ parser.add_argument('--optuna_trials', default=3, type=int,
                     help='number of trials to find the best parameter, the larger the better')
 parser.add_argument('--optimizer', default='Adam', type=str,
                     help='the optimizer to use')
+parser.add_argument('--scheduler', default='cosineannealing', type=str,
+                    help='what scheduler to use')
 parser.add_argument('--lr', default=0.001, type=float,
                     help='the optimizers learning rate')  
 parser.add_argument('--momentum', default=0.9, type=float,
