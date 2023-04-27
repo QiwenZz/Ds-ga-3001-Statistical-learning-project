@@ -16,7 +16,7 @@ python run.py --path data/train \
 --optuna False \
 --optuna_trials 5 \
 --optimizer SGD \
---schedul3r cosineannealing \
+--scheduler cosineannealing \
 --lr 0.01 \
 --momentum 0.9 \
 --weight_decay 1e-4 \
