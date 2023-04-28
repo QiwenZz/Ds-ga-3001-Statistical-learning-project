@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python run.py --path /content/drive/MyDrive/plant-seedlings-classification/small_sample \
+python run.py --path data/train \
 --smote True \
 --smote_k 5 \
 --size "(224,224)" \
@@ -32,8 +32,8 @@ python run.py --path /content/drive/MyDrive/plant-seedlings-classification/small
 --student_only False \
 --test False \
 --test_path data/test \
---test_model 0.9787946428571429.pth \
---segmentation True \
+--test_model 0.9698660714285714.pth \
+--segmentation False \
 
 # # Data Tuning Related
 # parser.add_argument('--path', default='data/train', type=str,

@@ -76,7 +76,7 @@ def write_out_submission(args,device):
         for class_folder_name in os.listdir(test_folder_path):
             if not os.path.isdir("data/segmentation_test"):
                 os.makedirs("data/segmentation_test")
-                for image_name in tqdm(os.listdir(test_folder_path)):
+                for image_name in os.listdir(test_folder_path):
                     image_org = cv2.imread(os.path.join(test_folder_path, image_name), cv2.IMREAD_COLOR)
                     image_mask = create_mask_for_plant(image_org)
                     image_segmented = segment_plant(image_org)
