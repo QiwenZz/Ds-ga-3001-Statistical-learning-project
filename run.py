@@ -31,13 +31,13 @@ parser.add_argument('--noise_std', default=0.05, type=float,
                     help='Adding noise with guassian distribution for data augmentation')
 parser.add_argument('--shuffle', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to shuffle training data during optimization')
-parser.add_argument('--segmentation', default=False, type=bool,type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--segmentation', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to segment training data during optimization')
-parser.add_argument('--random', default=False, type=bool,type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--random', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to random augement training data during optimization')
-parser.add_argument('--auto', default=False, type=bool,type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--auto', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to auto augement training data during optimization')
-parser.add_argument('--test_brightness', default=False, type=bool,type=lambda x: (str(x).lower() == 'true'),
+parser.add_argument('--test_brightness', default=False, type=lambda x: (str(x).lower() == 'true'),
                     help='whether to add brightness for validation and testing dataset during optimization')             
 
 # Hardware Related
