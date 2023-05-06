@@ -1,0 +1,45 @@
+{
+  "path": "data/train",
+  "smote": false,
+  "smote_k": 5,
+  "size": [
+    324,
+    324
+  ],
+  "bz": 64,
+  "norm_mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "norm_std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "brightness": [
+    0.8,
+    2.0
+  ],
+  "noise_std": 0.05,
+  "shuffle": true,
+  "device_id": 0,
+  "model": "resnet50",
+  "log": true,
+  "reuse_model": "",
+  "optimizer": "SGD",
+  "lr": 0.1,
+  "momentum": 0.9,
+  "weight_decay": 0.0001,
+  "freeze_num": 7,
+  "epochs": 100,
+  "patience": 100,
+  "snapshot_ensemble": true,
+  "estimators": 10,
+  "voting": "average",
+  "teacher": "deit_base_distilled_patch16_224",
+  "student": "deit_small_distilled_patch16_224",
+  "test": false,
+  "test_path": "data/test",
+  "test_model": "0.9966517857142857.pth"
+}
