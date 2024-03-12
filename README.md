@@ -1,6 +1,6 @@
 # Plant Seedlings Classification
 
-This repository contains the code for the Plant Seedlings Classification project, developed by Qiwen Zhang, Kristi Topollai, and Lehan Li. The project aims to classify different types of plant seedlings based on images using various deep learning techniques.
+This repository contains the code for the Plant Seedlings Classification project, developed by Qiwen Zhang, Kristi Topollai, and Lehan Li. The project aims to classify different types of plant seedlings based on images using various deep learning techniques. The kaggle competition is: https://www.kaggle.com/c/plant-seedlings-classification/overview
 
 ## Introduction
 
